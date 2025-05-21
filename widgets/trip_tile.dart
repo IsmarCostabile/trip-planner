@@ -36,13 +36,15 @@ class TripTile extends StatelessWidget {
                   color: Colors.grey.shade300,
                   width: 1.0,
                 ), // Default border
-        borderRadius: BorderRadius.circular(8.0), // Optional: Add border radius
+        borderRadius: BorderRadius.circular(
+          8.0,
+        ), // Match with BaseListTile's border radius
       ),
       child: ClipRRect(
         // Clip the BaseListTile to the rounded corners
         borderRadius: BorderRadius.circular(
-          7.0,
-        ), // Slightly smaller radius for clipping
+          8.0,
+        ), // Match with BaseListTile's border radius
         child: BaseListTile(
           title: trip.name,
           subtitle: Text(

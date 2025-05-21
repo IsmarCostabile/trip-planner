@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
       (TripDataService service) => service.selectedTrip,
     );
     // Get color from selected trip, or use default if no trip is selected
-    final Color seedColor = selectedTrip?.color ?? Colors.teal;
+    final Color seedColor = selectedTrip?.color ?? const Color(0xFFFB3640);
 
     // Debug print to see when MaterialApp rebuilds due to theme change
     // print("Rebuilding MaterialApp with seedColor: $seedColor");

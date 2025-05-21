@@ -343,7 +343,7 @@ class _ProfilePageState extends State<ProfilePage> {
               : SliverAppBar(
                 floating: true,
                 snap: true,
-                title: const Text('Profile'),
+                title: const Text('Your Profile'),
                 backgroundColor: Colors.white,
                 centerTitle: true,
               ),

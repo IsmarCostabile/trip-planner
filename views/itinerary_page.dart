@@ -8,6 +8,7 @@ import 'package:trip_planner/widgets/day_visits_list.dart';
 import 'package:trip_planner/widgets/modals/place_search_modal.dart';
 import 'package:trip_planner/widgets/modals/location_preview_modal.dart';
 import 'package:trip_planner/widgets/modals/add_visit_modal.dart';
+import 'package:trip_planner/widgets/modals/edit_participants_list_modal.dart';
 import 'package:trip_planner/models/trip.dart';
 import 'package:trip_planner/models/trip_day.dart';
 import 'package:google_maps_webservice/places.dart';
@@ -218,29 +219,63 @@ class _ItineraryPageState extends State<ItineraryPage>
               foregroundColor:
                   Colors.black, // Adjust icon/text colors if needed
               elevation: 1.0, // Optional: Add a slight shadow
+              // Calculate height based on title length
+              toolbarHeight:
+                  selectedTrip.name.length > 25
+                      ? kToolbarHeight - 8.0
+                      : selectedTrip.name.length > 15
+                      ? kToolbarHeight - 4.0
+                      : kToolbarHeight,
+
               // Leading: Participant Avatars (extracted from TripHeaderBar logic)
               leading: Padding(
-                padding: const EdgeInsets.only(left: 16.0),
+                padding: EdgeInsets.only(
+                  left: 16.0,
+                  top:
+                      selectedTrip.name.length > 25
+                          ? 2.0
+                          : selectedTrip.name.length > 15
+                          ? 3.0
+                          : 4.0,
+                ),
                 child: OverlappingAvatars(
                   participants: selectedTrip.participants,
-                  maxVisibleAvatars: 3,
-                  avatarSize: 42.0,
+                  maxVisibleAvatars: 2,
+                  avatarSize:
+                      selectedTrip.name.length > 25
+                          ? 34.0
+                          : selectedTrip.name.length > 15
+                          ? 36.0
+                          : 38.0,
                   overlap: 12.0,
                   backgroundColor: Colors.grey.shade400,
+                  clickable: true,
+                  onTap: () => _handleAvatarsTap(context, selectedTrip),
                 ),
               ),
-              // Title: Trip Name (extracted from TripHeaderBar logic)
+              // Title: Trip Name (extracted from TripHeaderBar logic with overflow handling)
               title: Padding(
-                padding: const EdgeInsets.only(
-                  bottom: 0.0,
-                ), // Adjust padding if needed
+                padding: EdgeInsets.only(
+                  top:
+                      selectedTrip.name.length > 25
+                          ? 0.0
+                          : selectedTrip.name.length > 15
+                          ? 1.0
+                          : 2.0,
+                ),
                 child: HighlightedText(
                   text: selectedTrip.name,
                   highlightColor: tripColor,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 28, // Slightly smaller for SliverAppBar
+                    fontSize:
+                        selectedTrip.name.length > 25
+                            ? 20.0
+                            : selectedTrip.name.length > 15
+                            ? 24.0
+                            : 28.0,
                     color: Colors.black,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -575,6 +610,20 @@ class _ItineraryPageState extends State<ItineraryPage>
       // Force map refresh instead of calling loadTripDays
       tripDataService.forceMapRefresh();
     }
+  }
+
+  // Method to show the participants management modal
+  Future<void> _showParticipantsModal(BuildContext context, Trip trip) async {
+    if (!mounted) return;
+
+    await showParticipantsListModal(context: context, trip: trip);
+
+    // No need to manually refresh as TripDataService will update the UI
+  }
+
+  // Method to handle tapping on the overlapping avatars
+  void _handleAvatarsTap(BuildContext context, Trip trip) {
+    showParticipantsListModal(context: context, trip: trip);
   }
 }
 

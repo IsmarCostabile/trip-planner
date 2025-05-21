@@ -138,12 +138,11 @@ class _BaseListTileState extends State<BaseListTile>
           background: Container(
             margin: widget.margin,
             decoration: BoxDecoration(
-              color: Colors.red,
-              borderRadius: BorderRadius.circular(12), // match Card radius
+              color: Colors.red, // match Card radius
             ),
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: const Icon(Icons.delete, color: Colors.white),
+            child: const Icon(Icons.exit_to_app, color: Colors.white),
           ),
           confirmDismiss: widget.confirmDismiss,
           onDismissed: (_) {
@@ -159,6 +158,11 @@ class _BaseListTileState extends State<BaseListTile>
       color: Colors.grey.shade50,
       margin: widget.margin,
       elevation: widget.elevation,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(
+          8,
+        ), // Match the background container radius
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min, // Make column as small as possible
         crossAxisAlignment: CrossAxisAlignment.start,

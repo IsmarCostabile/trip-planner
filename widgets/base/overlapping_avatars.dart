@@ -19,6 +19,12 @@ class OverlappingAvatars extends StatelessWidget {
   /// Background color for the +X indicator and default avatar color
   final Color? backgroundColor;
 
+  /// Whether to show a clickable style with hover effect
+  final bool clickable;
+
+  /// Callback for when the avatars are tapped
+  final VoidCallback? onTap;
+
   const OverlappingAvatars({
     super.key,
     required this.participants,
@@ -26,6 +32,8 @@ class OverlappingAvatars extends StatelessWidget {
     this.avatarSize = 32.0,
     this.overlap = 12.0,
     this.backgroundColor,
+    this.clickable = false,
+    this.onTap,
   });
 
   @override
@@ -52,20 +60,40 @@ class OverlappingAvatars extends StatelessWidget {
     // Add extra height to prevent bottom clipping
     final double totalHeight = avatarSize + borderWidth * 2 + 8;
 
+    // Create the base widget
+    Widget avatarStack = Stack(
+      alignment: Alignment.topLeft,
+      clipBehavior: Clip.none, // Don't clip children
+      children: _buildAvatarStack(defaultBackgroundColor, context, borderWidth),
+    );
+
+    // Add clickable styling if needed
+    if (clickable || onTap != null) {
+      avatarStack = InkWell(
+        onTap: onTap,
+        customBorder: CircleBorder(),
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Semantics(
+            button: true,
+            hint: 'Manage trip participants',
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(avatarSize / 2 + 4),
+              ),
+              child: avatarStack,
+            ),
+          ),
+        ),
+      );
+    }
+
     // Use a container with margin to prevent clipping
     return Container(
       margin: const EdgeInsets.all(2.0),
       width: totalWidth,
       height: totalHeight,
-      child: Stack(
-        alignment: Alignment.topLeft,
-        clipBehavior: Clip.none, // Don't clip children
-        children: _buildAvatarStack(
-          defaultBackgroundColor,
-          context,
-          borderWidth,
-        ),
-      ),
+      child: avatarStack,
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:trip_planner/models/trip.dart';
 import 'package:trip_planner/models/trip_participant.dart';
 import 'package:trip_planner/widgets/highlighted_text.dart';
 import 'package:trip_planner/widgets/base/overlapping_avatars.dart';
+import 'package:trip_planner/widgets/modals/edit_participants_list_modal.dart';
 
 class TripHeaderBar extends StatefulWidget implements PreferredSizeWidget {
   final Trip trip;
@@ -14,7 +15,17 @@ class TripHeaderBar extends StatefulWidget implements PreferredSizeWidget {
   State<TripHeaderBar> createState() => _TripHeaderBarState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize {
+    // Adjust height based on title length
+    double height = kToolbarHeight;
+    if (trip.name.length > 15) {
+      height = kToolbarHeight - 4.0;
+    }
+    if (trip.name.length > 25) {
+      height = kToolbarHeight - 8.0;
+    }
+    return Size.fromHeight(height);
+  }
 }
 
 class _TripHeaderBarState extends State<TripHeaderBar> {
@@ -60,13 +71,42 @@ class _TripHeaderBarState extends State<TripHeaderBar> {
   Widget _buildParticipantAvatars() {
     // Add debug print to see when this expensive build happens
     debugPrint("Executing _buildParticipantAvatars()");
+
+    // Scale avatar size based on trip name length for better proportions
+    double avatarSize = 38.0;
+    if (widget.trip.name.length > 15) {
+      avatarSize = 36.0;
+    }
+    if (widget.trip.name.length > 25) {
+      avatarSize = 34.0;
+    }
+
     return OverlappingAvatars(
       participants: widget.trip.participants,
-      maxVisibleAvatars: 3,
-      avatarSize: 42.0,
+      maxVisibleAvatars: 2,
+      avatarSize: avatarSize,
       overlap: 12.0,
       backgroundColor: Colors.grey.shade400,
+      clickable: true, // Make it appear clickable
+      onTap: () => _showParticipantsModal(context),
     );
+  }
+
+  // Method to show the participants management modal
+  void _showParticipantsModal(BuildContext context) async {
+    final result = await showParticipantsListModal(
+      context: context,
+      trip: widget.trip,
+    );
+
+    if (result == true) {
+      // Participant changes were saved, update the cache
+      setState(() {
+        _cachedParticipantsList = null;
+        _cachedParticipantAvatars = null;
+      });
+      _updateParticipantAvatarsCacheIfNeeded();
+    }
   }
 
   @override
@@ -77,21 +117,44 @@ class _TripHeaderBarState extends State<TripHeaderBar> {
     // Ensure cache is built if it's somehow null
     _cachedParticipantAvatars ??= _buildParticipantAvatars();
 
+    // Calculate font size based on text length
+    double fontSize = 28.0;
+    double topPadding = 4.0;
+    double toolbarHeight = kToolbarHeight;
+
+    if (widget.trip.name.length > 15) {
+      fontSize = 24.0;
+      topPadding = 3.0;
+      toolbarHeight = kToolbarHeight - 4.0;
+    }
+    if (widget.trip.name.length > 25) {
+      fontSize = 20.0;
+      topPadding = 2.0;
+      toolbarHeight = kToolbarHeight - 8.0;
+    }
+
     return AppBar(
+      toolbarHeight: toolbarHeight,
       leading: Padding(
-        padding: const EdgeInsets.only(left: 16.0),
-        // Use the cached widget here
+        padding: EdgeInsets.only(
+          left: 16.0,
+          top: topPadding,
+        ), // Adjust top padding based on size
+        // Use the cached widget here with onTap handler
         child: _cachedParticipantAvatars!,
       ),
       title: Padding(
-        padding: const EdgeInsets.only(bottom: 0.0), // Move title up
+        padding: EdgeInsets.only(
+          top: topPadding - 2.0,
+        ), // Adjust vertical alignment to match leading
         child: HighlightedText(
           text: widget.trip.name,
           highlightColor: tripColor,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 28,
+            fontSize: fontSize,
             color: Colors.black,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ),
