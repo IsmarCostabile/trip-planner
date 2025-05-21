@@ -3,15 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:trip_planner/models/trip_participant.dart';
 import 'package:trip_planner/models/location.dart';
-import 'package:trip_planner/models/trip_destination.dart'; // Added import
+import 'package:trip_planner/models/trip_destination.dart';
 import 'package:trip_planner/services/places_service.dart';
-// Removed BaseModal import
+import 'package:trip_planner/services/trip_invitation_service.dart';
 import 'package:trip_planner/widgets/trip_participants_list.dart';
 import 'package:google_maps_webservice/places.dart' hide Location;
 import 'package:provider/provider.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
-import 'package:trip_planner/widgets/modals/button_tray.dart'; // Add ButtonTray import
-import 'package:intl/intl.dart'; // Import for date formatting
+import 'package:trip_planner/widgets/modals/button_tray.dart';
+import 'package:intl/intl.dart';
 
 // Renamed class
 class TripCreationPage extends StatefulWidget {
@@ -317,6 +317,21 @@ class _TripCreationPageState extends State<TripCreationPage> {
         });
       }
       await batch.commit();
+
+      // Create invitations for participants who are not the owner
+      final invitationService = TripInvitationService();
+      final nonOwnerParticipants =
+          _participants.where((p) => p.uid != user!.uid).toList();
+
+      for (final participant in nonOwnerParticipants) {
+        await invitationService.createInvitation(
+          tripId: tripId,
+          tripName: _nameController.text,
+          inviteeId: participant.uid,
+          inviteeName: participant.username,
+          message: 'You\'ve been invited to join this trip!',
+        );
+      }
 
       // Refresh user trips in the service
       // Use currentContext.mounted check

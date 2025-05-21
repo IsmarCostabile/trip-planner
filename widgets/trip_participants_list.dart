@@ -61,6 +61,25 @@ class _TripParticipantsListState extends State<TripParticipantsList> {
       _participants.add(newParticipant);
     });
     widget.onParticipantsChanged(_participants);
+
+    // Create an invitation if this is not the current user
+    if (!isCurrentUser) {
+      _createInvitationForParticipant(newParticipant);
+    }
+  }
+
+  void _createInvitationForParticipant(TripParticipant participant) async {
+    try {
+      // Get current trip name from the parent - this will be implemented during trip creation
+      final tripName =
+          "Trip"; // This should be provided by the trip creation page
+      final tripId = "trip-id"; // This should be provided after trip is created
+
+      // Skip creating invitation now since we don't have the trip ID yet
+      // Invitations will be created after the trip is saved
+    } catch (e) {
+      print('Error creating invitation: $e');
+    }
   }
 
   void _removeParticipant(int index) {

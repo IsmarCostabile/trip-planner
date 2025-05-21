@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:trip_planner/models/trip.dart';
 import 'package:trip_planner/models/trip_participant.dart'; // This has InvitationStatus enum
+import 'package:trip_planner/models/trip_invitation.dart';
 import 'package:trip_planner/views/trip_invitation_page.dart';
 import 'package:trip_planner/services/trip_invitation_service.dart';
 import 'dart:io';
@@ -37,7 +38,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final ImagePicker _imagePicker = ImagePicker();
   List<Trip> _userTrips = [];
   String? _selectedTripId;
-  List<Trip> _pendingInvitations = [];
+  List<TripInvitation> _pendingInvitations = [];
   final TripInvitationService _invitationService = TripInvitationService();
 
   @override
@@ -243,18 +244,39 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _viewTripInvitation(String tripId) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TripInvitationPage(tripId: tripId),
-      ),
-    );
+  void _viewTripInvitationDetail(String invitationId) async {
+    try {
+      final invitation = await _invitationService.getInvitationById(
+        invitationId,
+      );
+      if (invitation == null || !mounted) return;
 
-    // Refresh invitations after responding to an invitation
-    if (result != null) {
-      _loadPendingInvitations();
-      // No need to manually reload trips as they're streamed now
+      // Get the trip info
+      final tripDoc =
+          await FirebaseFirestore.instance
+              .collection('trips')
+              .doc(invitation.tripId)
+              .get();
+
+      if (!tripDoc.exists || !mounted) return;
+
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TripInvitationPage(tripId: invitation.tripId),
+        ),
+      );
+
+      // Refresh invitations after responding to an invitation
+      if (result != null) {
+        _loadPendingInvitations();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading invitation: $e')));
+      }
     }
   }
 
@@ -432,40 +454,42 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
 
-                // Trip Invitations - Header + List
+                // Trip Invitations - Only show if there are pending invitations
                 if (_pendingInvitations.isNotEmpty) ...[
                   const Divider(height: 32),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Text(
-                      'Pending Invitations (${_pendingInvitations.length})',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Pending Invitations (${_pendingInvitations.length})',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _pendingInvitations.length,
+                    padding:
+                        EdgeInsets.zero, // Remove all padding around the list
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, index) {
-                      final trip = _pendingInvitations[index];
-                      final owner = trip.participants.firstWhere(
-                        (p) => p.uid == trip.ownerId,
-                        orElse:
-                            () => TripParticipant(uid: '', username: 'Unknown'),
-                      );
+                      final invitation = _pendingInvitations[index];
 
                       return ListTile(
                         contentPadding:
                             EdgeInsets.zero, // Remove default padding
                         leading: const Icon(Icons.card_travel),
-                        title: Text(trip.name),
-                        subtitle: Text('From: @${owner.username}'),
+                        title: Text(invitation.tripName),
+                        subtitle: Text('From: @${invitation.inviterName}'),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _viewTripInvitation(trip.id),
+                        onTap: () => _viewTripInvitationDetail(invitation.id),
                       );
                     },
                   ),

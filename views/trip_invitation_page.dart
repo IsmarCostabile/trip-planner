@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:trip_planner/models/trip.dart';
 import 'package:trip_planner/models/trip_participant.dart';
+import 'package:trip_planner/models/trip_invitation.dart';
+import 'package:trip_planner/services/trip_invitation_service.dart';
 
 class TripInvitationPage extends StatefulWidget {
   final String tripId;
@@ -17,8 +19,10 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
   bool _isLoading = true;
   bool _isProcessing = false;
   Trip? _trip;
+  TripInvitation? _invitation;
   String? _error;
   final user = FirebaseAuth.instance.currentUser;
+  final TripInvitationService _invitationService = TripInvitationService();
 
   @override
   void initState() {
@@ -36,6 +40,17 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
     }
 
     try {
+      // Find the invitation for this trip and the current user
+      final invitationsSnapshot =
+          await FirebaseFirestore.instance
+              .collection('tripInvitations')
+              .where('tripId', isEqualTo: widget.tripId)
+              .where('inviteeId', isEqualTo: user!.uid)
+              .where('status', isEqualTo: 'pending')
+              .limit(1)
+              .get();
+
+      // Load the trip details
       final tripDoc =
           await FirebaseFirestore.instance
               .collection('trips')
@@ -48,6 +63,13 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
           _isLoading = false;
         });
         return;
+      }
+
+      // Set invitation if found
+      if (invitationsSnapshot.docs.isNotEmpty) {
+        _invitation = TripInvitation.fromFirestore(
+          invitationsSnapshot.docs.first,
+        );
       }
 
       setState(() {
@@ -63,53 +85,77 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
   }
 
   Future<void> _respondToInvitation(bool accept) async {
-    if (_trip == null || user == null || _isProcessing) return;
+    if (_trip == null || _invitation == null || user == null || _isProcessing)
+      return;
 
     setState(() {
       _isProcessing = true;
     });
 
     try {
-      final tripRef = FirebaseFirestore.instance
-          .collection('trips')
-          .doc(_trip!.id);
-
+      // If accepting, update the trip participants
       if (accept) {
-        // Accept invitation by updating participant status
-        final updatedParticipants =
-            _trip!.participants.map((participant) {
-              if (participant.uid == user!.uid) {
-                return participant.copyWith(
-                  invitationStatus: InvitationStatus.accepted,
-                );
-              }
-              return participant;
-            }).toList();
+        final tripRef = FirebaseFirestore.instance
+            .collection('trips')
+            .doc(_trip!.id);
 
+        // Get current participants
+        final tripDoc = await tripRef.get();
+        if (!tripDoc.exists) {
+          throw Exception('Trip no longer exists');
+        }
+
+        final data = tripDoc.data()!;
+        final participants = List<Map<String, dynamic>>.from(
+          data['participants'] ?? [],
+        );
+
+        // Check if user is already in participants list
+        final existingIndex = participants.indexWhere(
+          (p) => p['uid'] == user!.uid,
+        );
+
+        // Create participant entry with accepted status
+        final participant = {
+          'uid': user!.uid,
+          'username': user!.displayName ?? user!.email?.split('@')[0] ?? 'User',
+          'email': user!.email,
+          'photoURL': user!.photoURL,
+          'invitationStatus': 'accepted',
+        };
+
+        if (existingIndex >= 0) {
+          // Update existing participant
+          participants[existingIndex] = participant;
+        } else {
+          // Add new participant
+          participants.add(participant);
+        }
+
+        // Update trip document
         await tripRef.update({
-          'participants': updatedParticipants.map((p) => p.toMap()).toList(),
+          'participants': participants,
           'updatedAt': FieldValue.serverTimestamp(),
         });
+      }
 
-        if (mounted) {
+      // Delete the invitation document (whether accepted or declined)
+      final deleteSuccess = await _invitationService.deleteInvitation(
+        _invitation!.id,
+      );
+
+      if (!deleteSuccess) {
+        debugPrint('Warning: Failed to delete invitation ${_invitation!.id}');
+        // Continue anyway as this is not a critical failure
+      }
+
+      if (mounted) {
+        if (accept) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trip invitation accepted!')),
           );
           Navigator.of(context).pop(true); // Return true to indicate acceptance
-        }
-      } else {
-        // Decline invitation by removing participant from the list
-        final updatedParticipants =
-            _trip!.participants
-                .where((participant) => participant.uid != user!.uid)
-                .toList();
-
-        await tripRef.update({
-          'participants': updatedParticipants.map((p) => p.toMap()).toList(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-
-        if (mounted) {
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trip invitation declined')),
           );
