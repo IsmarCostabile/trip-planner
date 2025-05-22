@@ -7,6 +7,8 @@ import 'package:trip_planner/services/trip_invitation_service.dart';
 import 'package:trip_planner/widgets/base/base_modal.dart';
 import 'package:trip_planner/widgets/trip_participants_list.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EditParticipantsListModal extends StatefulWidget {
   final Trip trip;
@@ -59,7 +61,18 @@ class _EditParticipantsListModalState extends State<EditParticipantsListModal> {
       // Create a copy of the trip with updated participants
       final updatedTrip = widget.trip.copyWith(participants: _participants);
 
-      // Update the trip in the database
+      // Get reference to the trip document in Firestore
+      final tripRef = FirebaseFirestore.instance
+          .collection('trips')
+          .doc(widget.trip.id);
+
+      // Update the trip in Firestore with the new participants list
+      await tripRef.update({
+        'participants': _participants.map((p) => p.toMap()).toList(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Update the trip in the local cache
       tripDataService.updateTrip(updatedTrip);
 
       // Process any pending invitations
