@@ -5,6 +5,7 @@ import 'package:trip_planner/models/visit.dart';
 import 'package:trip_planner/services/places_service.dart';
 import 'package:trip_planner/services/polyline_service.dart';
 import 'package:trip_planner/services/directions_service.dart'; // Import DirectionsService
+import 'package:trip_planner/widgets/empty_trip_placeholder.dart';
 import 'package:trip_planner/widgets/day_selector_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
@@ -440,8 +441,12 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
         final selectedTrip = tripDataService.selectedTrip;
         if (selectedTrip == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('No Trip Selected')),
-            body: const Center(child: Text('Please select a trip.')),
+            appBar: AppBar(title: const Text('Trip Map')),
+            body: const EmptyTripPlaceholder(
+              message: 'Ready to explore new destinations?',
+              buttonText: 'Plan your next Trip',
+              icon: Icons.explore,
+            ),
           );
         }
         final tripDays = tripDataService.selectedTripDays;

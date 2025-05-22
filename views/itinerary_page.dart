@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:trip_planner/services/places_service.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
 import 'package:trip_planner/widgets/day_visits_list.dart';
+import 'package:trip_planner/widgets/empty_trip_placeholder.dart';
 // Remove DaySelectorAppBar import if no longer needed directly
 // import 'package:trip_planner/widgets/day_selector_app_bar.dart';
 import 'package:trip_planner/widgets/modals/place_search_modal.dart';
@@ -159,7 +160,11 @@ class _ItineraryPageState extends State<ItineraryPage>
     if (selectedTrip == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Itinerary')),
-        body: const Center(child: Text('No trip selected or data available.')),
+        body: const EmptyTripPlaceholder(
+          message: 'Ready to plan your adventure?',
+          buttonText: 'Plan your next Trip',
+          icon: Icons.map,
+        ),
       );
     }
 
@@ -170,7 +175,13 @@ class _ItineraryPageState extends State<ItineraryPage>
     if (tripDays.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(selectedTrip.name)),
-        body: const Center(child: Text('This trip has no planned days yet.')),
+        body: EmptyTripPlaceholder(
+          message: 'This trip has no planned days yet.',
+          buttonText: 'Add your first day',
+          icon: Icons.calendar_today,
+          // Using a simpler implementation for this case
+          // since we need to update the trip days rather than create a new trip
+        ),
         floatingActionButton: _buildAddPlaceButton(tripDataService),
       );
     }
@@ -240,7 +251,7 @@ class _ItineraryPageState extends State<ItineraryPage>
                 ),
                 child: OverlappingAvatars(
                   participants: selectedTrip.participants,
-                  maxVisibleAvatars: 2,
+                  maxVisibleAvatars: 1,
                   avatarSize:
                       selectedTrip.name.length > 25
                           ? 34.0

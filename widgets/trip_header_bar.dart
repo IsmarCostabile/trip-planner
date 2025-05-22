@@ -83,7 +83,7 @@ class _TripHeaderBarState extends State<TripHeaderBar> {
 
     return OverlappingAvatars(
       participants: widget.trip.participants,
-      maxVisibleAvatars: 2,
+      maxVisibleAvatars: 1,
       avatarSize: avatarSize,
       overlap: 12.0,
       backgroundColor: Colors.grey.shade400,
