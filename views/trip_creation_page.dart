@@ -6,7 +6,7 @@ import 'package:trip_planner/models/location.dart';
 import 'package:trip_planner/models/trip_destination.dart';
 import 'package:trip_planner/services/places_service.dart';
 import 'package:trip_planner/services/trip_invitation_service.dart';
-import 'package:trip_planner/widgets/trip_participants_list.dart';
+import 'package:trip_planner/widgets/trip_participants_list_fixed.dart'; // Changed to use fixed version
 import 'package:google_maps_webservice/places.dart' hide Location;
 import 'package:provider/provider.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
@@ -633,7 +633,7 @@ class _TripCreationPageState extends State<TripCreationPage> {
     // Ensure the list is scrollable if it gets long
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: TripParticipantsList(
+      child: TripParticipantsListFixed(
         participants: _participants,
         onParticipantsChanged: (participants) {
           setState(() => _participants = participants);
@@ -713,20 +713,22 @@ class _TripCreationPageState extends State<TripCreationPage> {
         // Use Form widget to enable validation across steps
         body: Form(
           key: _formKey,
-          child: Column(
-            // Use Column to place content and footer
-            children: [
-              Expanded(
-                // Make the step content take available space
-                child: Padding(
-                  // Add padding around the step content
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: _buildStepContent(),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.max, // Ensure column takes full height
+              children: [
+                Expanded(
+                  // Make the step content take available space
+                  child: Padding(
+                    // Add padding around the step content
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: _buildStepContent(),
+                  ),
                 ),
-              ),
-              // Place the footer at the bottom
-              _buildFooter(),
-            ],
+                // Place the footer at the bottom
+                _buildFooter(),
+              ],
+            ),
           ),
         ),
       ),

@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:trip_planner/widgets/base/base_list_tile.dart';
 import 'package:trip_planner/widgets/mini_map_view.dart';
-import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
 import 'package:trip_planner/widgets/modals/edit_visit_time_modal.dart';

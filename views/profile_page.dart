@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:trip_planner/models/trip.dart';
-import 'package:trip_planner/models/trip_participant.dart'; // This has InvitationStatus enum
+import 'package:trip_planner/models/trip.dart'; // This has InvitationStatus enum
 import 'package:trip_planner/models/trip_invitation.dart';
 import 'package:trip_planner/views/trip_invitation_page.dart';
 import 'package:trip_planner/services/trip_invitation_service.dart';

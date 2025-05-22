@@ -73,7 +73,7 @@ class _TripParticipantsListState extends State<TripParticipantsList> {
       // Skip creating invitation now since we don't have the trip ID yet
       // Invitations will be created after the trip is saved in AddParticipantModal
     } catch (e) {
-      print('Error creating invitation: $e');
+      debugPrint('Error creating invitation: $e');
     }
   }
 
@@ -112,110 +112,87 @@ class _TripParticipantsListState extends State<TripParticipantsList> {
           hintText: '@username',
         ),
         const SizedBox(height: 16),
-        if (_participants.isNotEmpty) ...[
+        if (_participants.isNotEmpty)
           const Text(
             'Current Participants:',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                border: Border.all(color: theme.dividerColor),
-                borderRadius: BorderRadius.circular(8.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
+        const SizedBox(height: 8),
+        Container(
+          constraints: const BoxConstraints(maxHeight: 300),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            border: Border.all(color: theme.dividerColor),
+            borderRadius: BorderRadius.circular(8.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 2,
+                offset: const Offset(0, 1),
               ),
-              // Use a ListView instead of a ListView.builder to avoid sizing issues
-              // when in a Column with Expanded
-              child: ListView.separated(
-                shrinkWrap: true, // Changed to true to respect parent bounds
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                itemCount: _participants.length,
-                separatorBuilder:
-                    (context, index) => Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: theme.dividerColor.withOpacity(0.3),
-                    ),
-                itemBuilder: (context, index) {
-                  final participant = _participants[index];
-                  final isCurrentUser = participant.uid == widget.currentUserId;
-                  final invitationStatus =
-                      participant.invitationStatus == InvitationStatus.pending
-                          ? ' (Invitation pending)'
-                          : '';
-
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    leading: ProfilePictureWidget(
-                      photoUrl: participant.photoUrl,
-                      username: participant.username,
-                      size: 40,
-                    ),
-                    title: Text(
-                      '@${participant.username}${isCurrentUser ? ' (You)' : ''}$invitationStatus',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    subtitle: Text(
-                      participant.email ?? '',
-                      style: TextStyle(
-                        color: theme.textTheme.bodySmall?.color,
-                        fontSize: 12,
-                      ),
-                    ),
-                    trailing:
-                        isCurrentUser
-                            ? Chip(
-                              label: const Text('You'),
-                              backgroundColor: Colors.green,
-                              labelStyle: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                            )
-                            : IconButton(
-                              icon: const Icon(Icons.remove_circle),
-                              color: Colors.red,
-                              onPressed: () => _removeParticipant(index),
-                              tooltip: 'Remove participant',
-                            ),
-                  );
-                },
-              ),
-            ),
+            ],
           ),
-        ] else ...[
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                border: Border.all(color: theme.dividerColor),
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Center(
-                child: Text(
-                  'No participants added yet',
-                  style: TextStyle(color: theme.textTheme.bodySmall?.color),
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            itemCount: _participants.length,
+            separatorBuilder:
+                (context, index) => Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: theme.dividerColor.withOpacity(0.3),
                 ),
-              ),
-            ),
+            itemBuilder: (context, index) {
+              final participant = _participants[index];
+              final isCurrentUser = participant.uid == widget.currentUserId;
+              final invitationStatus =
+                  participant.invitationStatus == InvitationStatus.pending
+                      ? ' (Invitation pending)'
+                      : '';
+
+              return ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                leading: ProfilePictureWidget(
+                  photoUrl: participant.photoUrl,
+                  username: participant.username,
+                  size: 40,
+                ),
+                title: Text(
+                  '@${participant.username}${isCurrentUser ? ' (You)' : ''}$invitationStatus',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                subtitle: Text(
+                  participant.email ?? '',
+                  style: TextStyle(
+                    color: theme.textTheme.bodySmall?.color,
+                    fontSize: 12,
+                  ),
+                ),
+                trailing:
+                    isCurrentUser
+                        ? Chip(
+                          label: const Text('You'),
+                          backgroundColor: Colors.green,
+                          labelStyle: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                        )
+                        : IconButton(
+                          icon: const Icon(Icons.remove_circle),
+                          color: Colors.red,
+                          onPressed: () => _removeParticipant(index),
+                          tooltip: 'Remove participant',
+                        ),
+              );
+            },
           ),
-        ],
+        ),
       ],
     );
   }

@@ -16,7 +16,6 @@ import 'package:trip_planner/services/trip_data_service.dart';
 import 'package:trip_planner/models/trip.dart';
 import 'package:trip_planner/services/directions_service.dart';
 import 'package:trip_planner/services/places_service.dart'; // Import PlacesService
-import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
