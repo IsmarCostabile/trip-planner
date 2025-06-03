@@ -6,14 +6,14 @@ class TripParticipant {
   final String uid;
   final String? email;
   final String username;
-  final String? photoUrl; // Add profile picture URL
+  final String? photoUrl;
   final InvitationStatus invitationStatus;
 
   TripParticipant({
     required this.uid,
     this.email,
     required this.username,
-    this.photoUrl, // Add to constructor
+    this.photoUrl,
     this.invitationStatus =
         InvitationStatus.accepted, // Owner is automatically accepted
   });
@@ -30,7 +30,6 @@ class TripParticipant {
     );
   }
 
-  // Create from map (useful for Firestore data)
   factory TripParticipant.fromMap(Map<String, dynamic> map) {
     return TripParticipant(
       uid: map['uid'],
@@ -41,18 +40,16 @@ class TripParticipant {
     );
   }
 
-  // Convert to map for Firestore
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
       'username': username,
       'email': email,
-      'photoURL': photoUrl, // Save as photoURL
+      'photoURL': photoUrl,
       'invitationStatus': invitationStatus.toString().split('.').last,
     };
   }
 
-  // Copy with function for updating participant data
   TripParticipant copyWith({
     String? username,
     String? email,
@@ -68,7 +65,6 @@ class TripParticipant {
     );
   }
 
-  // Helper to parse status from string
   static InvitationStatus _statusFromString(String? status) {
     if (status == null) return InvitationStatus.pending;
 

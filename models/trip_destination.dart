@@ -12,16 +12,14 @@ class TripDestination {
     required this.endDate,
   });
 
-  // Convert to a Map for Firestore
   Map<String, dynamic> toMap() {
     return {
-      'location': location.toMap(), // Assuming Location has a toMap method
+      'location': location.toMap(),
       'startDate': Timestamp.fromDate(startDate),
       'endDate': Timestamp.fromDate(endDate),
     };
   }
 
-  // Create from a Map (e.g., from Firestore)
   factory TripDestination.fromMap(Map<String, dynamic> map) {
     return TripDestination(
       location: Location.fromMap(map['location'] as Map<String, dynamic>),

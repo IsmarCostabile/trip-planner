@@ -3,11 +3,11 @@ import 'location.dart';
 
 class Visit {
   final String id;
-  final String locationId; // Reference to Location model
-  Location? location; // Actual location object (can be loaded separately)
+  final String locationId;
+  Location? location;
   final DateTime visitTime;
-  final int visitDuration; // Duration in minutes
-  final String? notes; // Optional cost of the visit
+  final int visitDuration;
+  final String? notes;
 
   Visit({
     required this.id,
@@ -21,7 +21,6 @@ class Visit {
   factory Visit.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
-    // Helper function to handle ISO8601 date strings
     DateTime parseDate(dynamic dateValue) {
       try {
         if (dateValue is String) {
@@ -30,7 +29,7 @@ class Visit {
           print(
             'Unexpected date format: $dateValue (${dateValue.runtimeType})',
           );
-          return DateTime.now(); // Fallback to current date if format is unknown
+          return DateTime.now();
         }
       } catch (e) {
         print('Error parsing date: $dateValue - $e');
@@ -48,7 +47,6 @@ class Visit {
   }
 
   factory Visit.fromMap(Map<String, dynamic> map) {
-    // Parse location data if it exists
     Location? location;
     if (map['location'] != null) {
       try {
@@ -61,7 +59,7 @@ class Visit {
     return Visit(
       id: map['id'] ?? '',
       locationId: map['locationId'] ?? '',
-      location: location, // Add the parsed location
+      location: location,
       visitTime: DateTime.parse(map['visitTime']),
       visitDuration: map['visitDuration'] ?? 0,
       notes: map['notes'],
@@ -70,11 +68,9 @@ class Visit {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id, // Include the ID field when saving to Firestore
+      'id': id,
       'locationId': locationId,
-      'visitTime':
-          visitTime
-              .toIso8601String(), // Convert DateTime to String instead of Timestamp
+      'visitTime': visitTime.toIso8601String(),
       'visitDuration': visitDuration,
       'notes': notes,
     };
@@ -119,10 +115,8 @@ class Visit {
     return '$hourDisplay:$minute $period';
   }
 
-  /// Returns the end time of the visit, calculated from visitTime + visitDuration
   DateTime get visitEndTime => visitTime.add(Duration(minutes: visitDuration));
 
-  /// Returns the end time formatted as a string (e.g. "2:30 PM")
   String get formattedVisitEndTime {
     final endTime = visitEndTime;
     final hour = endTime.hour;

@@ -153,7 +153,6 @@ class VisitTile extends StatelessWidget {
     Widget? expandableContent;
 
     if (visit.notes != null && visit.notes!.isNotEmpty ||
-        visit.cost != null && visit.cost! > 0 ||
         visit.location?.address != null ||
         (visit.location?.coordinates != null)) {
       expandableContent = Column(
@@ -183,21 +182,6 @@ class VisitTile extends StatelessWidget {
             const SizedBox(height: 4),
             Text(visit.notes!),
             const SizedBox(height: 8),
-          ],
-
-          if (visit.cost != null && visit.cost! > 0) ...[
-            Text(
-              'Cost:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              NumberFormat.currency(symbol: '\$').format(visit.cost),
-              style: TextStyle(color: Colors.green[700]),
-            ),
           ],
 
           if (visit.location?.coordinates != null) ...[
@@ -626,27 +610,6 @@ class _VisitListItemState extends State<VisitListItem>
                     Text(
                       visit.notes!,
                       style: const TextStyle(fontStyle: FontStyle.italic),
-                    ),
-                  ],
-
-                  // Cost
-                  if (visit.cost != null && visit.cost! > 0) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.attach_money,
-                          size: 16,
-                          color: Colors.green[700],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          NumberFormat.currency(
-                            symbol: '\$',
-                          ).format(visit.cost),
-                          style: TextStyle(color: Colors.green[700]),
-                        ),
-                      ],
                     ),
                   ],
                 ],

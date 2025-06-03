@@ -96,7 +96,6 @@ class _AuthPageState extends State<AuthPage> {
           return;
         }
 
-        // Check username one more time before registration
         bool exists = await _authService.checkUsernameExists(
           _usernameController.text,
         );

@@ -47,7 +47,6 @@ class AuthService {
     return userCredential;
   }
 
-  // Check if username exists
   Future<bool> checkUsernameExists(String username) async {
     final querySnapshot =
         await _firestore

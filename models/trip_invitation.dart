@@ -66,9 +66,7 @@ class TripInvitation {
     );
   }
 
-  // Create from map
   factory TripInvitation.fromMap(String id, Map<String, dynamic> map) {
-    // Helper function to handle different date formats
     DateTime parseDate(dynamic dateValue) {
       try {
         if (dateValue is String) {
@@ -119,7 +117,6 @@ class TripInvitation {
     };
   }
 
-  // Copy with function
   TripInvitation copyWith({
     String? tripId,
     String? tripName,
@@ -145,7 +142,6 @@ class TripInvitation {
     );
   }
 
-  // Helper to parse status from string
   static InvitationStatus _statusFromString(String? status) {
     if (status == null) return InvitationStatus.pending;
 

@@ -8,24 +8,23 @@ class Location {
   final String? description;
   final GeoPoint coordinates;
   final String? address;
-  final String? category; // e.g., restaurant, museum, hotel, etc.
+  final String? category; // restaurant, museum, hotel, etc.
   final String? website;
   final String? phoneNumber;
   final Map<String, dynamic>? openingHours;
   final String? photoUrl; // Primary photo URL
-  final List<String>? photoUrls; // Support for multiple photos
+  final List<String>? photoUrls;
   final DateTime? createdAt;
   final DateTime? updatedAt;
-  final String placeId; // Added for Google Places integration
+  final String placeId;
 
-  // In-memory only properties - not stored in Firestore
-  final File? localPhoto; // For temporarily storing photo before upload
+  final File? localPhoto; // temporarily store photo before upload
 
   Location({
     required this.id,
     required this.name,
     required this.coordinates,
-    this.placeId = '', // Make optional with default value
+    this.placeId = '',
     this.description,
     this.address,
     this.category,
@@ -45,7 +44,7 @@ class Location {
       id: doc.id,
       name: data['name'],
       coordinates: data['coordinates'] as GeoPoint,
-      placeId: data['placeId'] ?? '', // Added placeId
+      placeId: data['placeId'] ?? '',
       description: data['description'],
       address: data['address'],
       category: data['category'],
@@ -69,27 +68,19 @@ class Location {
   }
 
   factory Location.fromMap(Map<String, dynamic> map) {
-    // Handle case where id might be null
     String id = map['id'] ?? '';
-
-    // Handle required name field
     String name = map['name'] as String? ?? '';
-
-    // Handle coordinates which is required
     GeoPoint coordinates =
         map['coordinates'] is GeoPoint
             ? map['coordinates']
             : map['coordinates'] == null
-            ? const GeoPoint(0, 0) // Provide default coordinates if null
+            ? const GeoPoint(0, 0)
             : GeoPoint(
               (map['coordinates']['latitude'] as num).toDouble(),
               (map['coordinates']['longitude'] as num).toDouble(),
             );
 
-    // Handle placeId which is required
     String placeId = map['placeId'] as String? ?? '';
-
-    // Handle photoUrls
     List<String>? photoUrls;
     if (map['photoUrls'] != null) {
       photoUrls = List<String>.from(map['photoUrls']);
@@ -119,7 +110,7 @@ class Location {
     return {
       'name': name,
       'coordinates': coordinates,
-      'placeId': placeId, // Added placeId
+      'placeId': placeId,
       'description': description,
       'address': address,
       'category': category,
@@ -141,7 +132,7 @@ class Location {
         'latitude': coordinates.latitude,
         'longitude': coordinates.longitude,
       },
-      'placeId': placeId, // Added placeId
+      'placeId': placeId,
       'description': description,
       'address': address,
       'category': category,
@@ -158,7 +149,7 @@ class Location {
   Location copyWith({
     String? name,
     GeoPoint? coordinates,
-    String? placeId, // Added placeId
+    String? placeId,
     String? description,
     String? address,
     String? category,
@@ -173,7 +164,7 @@ class Location {
       id: id,
       name: name ?? this.name,
       coordinates: coordinates ?? this.coordinates,
-      placeId: placeId ?? this.placeId, // Added placeId
+      placeId: placeId ?? this.placeId,
       description: description ?? this.description,
       address: address ?? this.address,
       category: category ?? this.category,
@@ -200,7 +191,6 @@ class Location {
             ? fileName
             : '${DateTime.now().millisecondsSinceEpoch}_${photoFile.path.split('/').last}';
 
-    // Create reference to the location where the file should be stored
     final storageRef = storage.ref().child(
       'locations/$locationId/$fileNameToUse',
     );
@@ -215,7 +205,7 @@ class Location {
     return downloadUrl;
   }
 
-  /// Saves a location to Firestore with its photo uploaded to Storage
+  // Saves a location to Firestore with its photo uploaded to Storage
   static Future<Location> saveLocationWithPhoto({
     required Location location,
     bool uploadLocalPhoto = true,
@@ -240,14 +230,12 @@ class Location {
               : location.photoUrls,
     );
 
-    // Save to Firestore
     final locationRef = firestore.collection('locations').doc(location.id);
     await locationRef.set(updatedLocation.toMap());
 
     return updatedLocation;
   }
 
-  // Get the main photo URL or the first from the list if available
   String? get mainPhotoUrl =>
       photoUrl ?? (photoUrls?.isNotEmpty == true ? photoUrls!.first : null);
 }

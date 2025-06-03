@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 class TransitDetails {
-  final String? lineName; // e.g., "Bus 100", "Metro A"
-  final String? vehicleType; // e.g., "BUS", "SUBWAY"
+  final String? lineName; // Bus 766, Metro A, etc.
+  final String? vehicleType; // BUS, SUBWAY
   final String? departureStop;
   final String? arrivalStop;
-  final String? headsign; // Direction or destination of the vehicle
-  final int? numStops; // Number of stops
-  final String? duration; // Duration of this transit segment
+  final String? headsign;
+  final int? numStops;
+  final String? duration;
 
   TransitDetails({
     this.lineName,
@@ -19,7 +19,6 @@ class TransitDetails {
     this.duration,
   });
 
-  /// Creates a formatted string representation of the transit line details
   String get formattedTransitLine {
     if (lineName == null || departureStop == null || arrivalStop == null) {
       return 'Unknown transit';
@@ -32,7 +31,6 @@ class TransitDetails {
     return '$type ${lineName!}: $departureStop → $arrivalStop$time$stops';
   }
 
-  /// Get the appropriate icon for this transit mode
   IconData get icon {
     final type = vehicleType?.toLowerCase() ?? '';
 
@@ -56,7 +54,6 @@ class TransitDetails {
     }
   }
 
-  /// Format the transit details into a rich text span with icon
   Widget get formattedTransitWidget {
     if (lineName == null || departureStop == null || arrivalStop == null) {
       return const Text('Unknown transit');
@@ -98,7 +95,6 @@ class TransitDetails {
     );
   }
 
-  /// Creates a TransitDetails object from a JSON map
   factory TransitDetails.fromJson(Map<String, dynamic> json) {
     return TransitDetails(
       lineName: json['line']?['short_name'] ?? json['line']?['name'],
@@ -111,7 +107,6 @@ class TransitDetails {
     );
   }
 
-  /// Converts the TransitDetails object to a JSON map
   Map<String, dynamic> toJson() {
     return {
       'line': {'name': lineName},

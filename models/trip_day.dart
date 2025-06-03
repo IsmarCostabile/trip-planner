@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'visit.dart';
 
-// Add a TravelSegment class to store the travel mode between visits
 class TravelSegment {
   final String originVisitId;
   final String destinationVisitId;
@@ -35,7 +34,7 @@ class TripDay {
   final String tripId;
   final DateTime date;
   final List<Visit> visits;
-  final List<TravelSegment> travelSegments; // Added travel segments list
+  final List<TravelSegment> travelSegments;
   final String? notes;
   final DateTime? updatedAt;
 
@@ -44,12 +43,11 @@ class TripDay {
     required this.tripId,
     required this.date,
     this.visits = const [],
-    this.travelSegments = const [], // Initialize with empty list
+    this.travelSegments = const [],
     this.notes,
     this.updatedAt,
   });
 
-  // Create from Firestore document
   factory TripDay.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
@@ -61,7 +59,6 @@ class TripDay {
       }
     }
 
-    // Parse travel segments
     final List<TravelSegment> travelSegments = [];
     if (data['travelSegments'] != null) {
       for (final segmentData in data['travelSegments']) {
@@ -77,7 +74,6 @@ class TripDay {
       }
     }
 
-    // Helper function to handle different date formats
     DateTime parseDate(dynamic dateValue) {
       try {
         if (dateValue is String) {
@@ -88,7 +84,7 @@ class TripDay {
           print(
             'Unexpected date format: $dateValue (${dateValue.runtimeType})',
           );
-          return DateTime.now(); // Fallback to current date if format is unknown
+          return DateTime.now();
         }
       } catch (e) {
         print('Error parsing date: $dateValue - $e');
@@ -101,7 +97,7 @@ class TripDay {
       tripId: data['tripId'],
       date: parseDate(data['date']),
       visits: visits,
-      travelSegments: travelSegments, // Include travel segments
+      travelSegments: travelSegments,
       notes: data['notes'],
       updatedAt:
           data['updatedAt'] != null ? parseDate(data['updatedAt']) : null,
@@ -114,7 +110,6 @@ class TripDay {
     if (map['visits'] != null) {
       for (final visit in map['visits']) {
         try {
-          // Safely convert to Map<String, dynamic> with error handling
           if (visit is Map) {
             visits.add(Visit.fromMap(Map<String, dynamic>.from(visit)));
           }
@@ -140,7 +135,6 @@ class TripDay {
       }
     }
 
-    // Helper function to handle different date formats
     DateTime parseDate(dynamic dateValue) {
       try {
         if (dateValue is String) {
@@ -151,7 +145,7 @@ class TripDay {
           print(
             'Unexpected date format: $dateValue (${dateValue.runtimeType})',
           );
-          return DateTime.now(); // Fallback to current date if format is unknown
+          return DateTime.now();
         }
       } catch (e) {
         print('Error parsing date: $dateValue - $e');
@@ -164,7 +158,7 @@ class TripDay {
       tripId: map['tripId'],
       date: parseDate(map['date']),
       visits: visits,
-      travelSegments: travelSegments, // Include travel segments
+      travelSegments: travelSegments,
       notes: map['notes'],
       updatedAt: map['updatedAt'] != null ? parseDate(map['updatedAt']) : null,
     );
@@ -177,33 +171,27 @@ class TripDay {
       'date': date.toIso8601String(),
       'visits': visits.map((location) => location.toMap()).toList(),
       'travelSegments':
-          travelSegments
-              .map((segment) => segment.toMap())
-              .toList(), // Include travel segments
+          travelSegments.map((segment) => segment.toMap()).toList(),
       'notes': notes,
       'updatedAt': updatedAt != null ? updatedAt!.toIso8601String() : null,
     };
   }
 
-  // Convert to map for local storage
   Map<String, dynamic> toLocalMap() {
     return {
       'tripId': tripId,
       'date': date.toIso8601String(),
       'visits': visits.map((location) => location.toLocalMap()).toList(),
       'travelSegments':
-          travelSegments
-              .map((segment) => segment.toMap())
-              .toList(), // Include travel segments
+          travelSegments.map((segment) => segment.toMap()).toList(),
       'notes': notes,
       'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
-  // Copy with function for updating trip day
   TripDay copyWith({
     List<Visit>? visits,
-    List<TravelSegment>? travelSegments, // Add travel segments parameter
+    List<TravelSegment>? travelSegments,
     String? notes,
   }) {
     return TripDay(
@@ -211,14 +199,12 @@ class TripDay {
       tripId: tripId,
       date: date,
       visits: visits ?? this.visits,
-      travelSegments:
-          travelSegments ?? this.travelSegments, // Include travel segments
+      travelSegments: travelSegments ?? this.travelSegments,
       notes: notes ?? this.notes,
       updatedAt: DateTime.now(),
     );
   }
 
-  // Add a convenience method to find a travel segment for specific visits
   TravelSegment? findTravelSegment(
     String originVisitId,
     String destinationVisitId,
@@ -230,21 +216,17 @@ class TripDay {
             segment.destinationVisitId == destinationVisitId,
       );
     } catch (e) {
-      // No segment found
       return null;
     }
   }
 
-  // Helper method to add or update a travel segment
   TripDay addOrUpdateTravelSegment(
     String originVisitId,
     String destinationVisitId,
     String travelMode,
   ) {
-    // Create a copy of the current travel segments
     final updatedSegments = List<TravelSegment>.from(travelSegments);
 
-    // Try to find and update an existing segment
     final existingIndex = updatedSegments.indexWhere(
       (segment) =>
           segment.originVisitId == originVisitId &&
@@ -252,14 +234,12 @@ class TripDay {
     );
 
     if (existingIndex >= 0) {
-      // Replace the existing segment
       updatedSegments[existingIndex] = TravelSegment(
         originVisitId: originVisitId,
         destinationVisitId: destinationVisitId,
         travelMode: travelMode,
       );
     } else {
-      // Add a new segment
       updatedSegments.add(
         TravelSegment(
           originVisitId: originVisitId,
@@ -269,11 +249,9 @@ class TripDay {
       );
     }
 
-    // Return a new TripDay with the updated segments
     return copyWith(travelSegments: updatedSegments);
   }
 
-  // Format day as string (e.g., "Mon, Jan 1")
   String dayLabel(DateTime tripStartDate) {
     return '${_getWeekdayShort(date.weekday)} ${date.day}${_getDayNumberSuffix(date.day)}';
   }
@@ -294,18 +272,15 @@ class TripDay {
     }
   }
 
-  // Get date formatted as "Mon, Jan 1"
   String get dateFormatted {
     return '${_getWeekdayShort(date.weekday)}, ${_getMonthShort(date.month)} ${date.day}';
   }
 
-  // Helper method to get short weekday name
   String _getWeekdayShort(int weekday) {
     const weekdays = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return weekdays[weekday];
   }
 
-  // Helper method to get short month name
   String _getMonthShort(int month) {
     const months = [
       '',
