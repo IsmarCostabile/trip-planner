@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:trip_planner/widgets/location_photo_carousel.dart';
 
-/// A utility function to show a modal bottom sheet with consistent styling
-/// and behavior throughout the app.
 Future<T?> showAppModal<T>({
   required BuildContext context,
   required Widget Function(BuildContext) builder,
@@ -14,7 +12,6 @@ Future<T?> showAppModal<T>({
   double minChildSize = 0.6,
   double maxChildSize = 1.0,
 }) {
-  // Use the provided context, but recommend passing the root context for best results
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
@@ -25,43 +22,18 @@ Future<T?> showAppModal<T>({
   );
 }
 
-/// A base class for modal bottom sheets in the app.
-/// Provides consistent styling and behavior.
 class BaseModal extends StatelessWidget {
-  /// The primary content of the modal.
   final Widget child;
-
-  /// Whether the modal is scrollable.
   final bool isScrollable;
-
-  /// The controller for the scrollable content, if any.
   final ScrollController? scrollController;
-
-  /// The initial size of the modal as a fraction of the screen height.
   final double initialChildSize;
-
-  /// The minimum size of the modal as a fraction of the screen height.
   final double minChildSize;
-
-  /// The maximum size of the modal as a fraction of the screen height.
   final double maxChildSize;
-
-  /// The background color of the modal.
   final Color? backgroundColor;
-
-  /// Optional footer widget (buttons, etc.), which will be pinned at the bottom.
   final Widget? footer;
-
-  /// Optional loading indicator to show when the modal is loading content.
   final bool isLoading;
-
-  /// Optional padding for the entire modal container.
   final EdgeInsetsGeometry? padding;
-
-  /// Optional title for the modal.
   final String? title;
-
-  /// Whether to dismiss keyboard when tapping outside content
   final bool dismissKeyboardOnTapOutside;
 
   const BaseModal({
@@ -112,7 +84,6 @@ class BaseModal extends StatelessWidget {
     final theme = Theme.of(context);
 
     return GestureDetector(
-      // When tapping the modal background, dismiss the keyboard
       onTap:
           dismissKeyboardOnTapOutside
               ? () => FocusScope.of(context).unfocus()
@@ -126,16 +97,12 @@ class BaseModal extends StatelessWidget {
           color: Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        // Use LayoutBuilder to ensure we have proper constraints
         child: LayoutBuilder(
           builder: (context, constraints) {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Drag handle
                 _buildDragHandle(context),
-
-                // Title if provided
                 if (title != null)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -145,15 +112,11 @@ class BaseModal extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                   ),
-
-                // Loading indicator
                 if (isLoading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8),
                     child: LinearProgressIndicator(),
                   ),
-
-                // Main content - add SizedBox with constraints to prevent layout issues
                 Flexible(
                   child: SizedBox(
                     width: constraints.maxWidth,
@@ -166,8 +129,6 @@ class BaseModal extends StatelessWidget {
                             : child,
                   ),
                 ),
-
-                // Footer if provided
                 if (footer != null) footer!,
               ],
             );
@@ -177,7 +138,6 @@ class BaseModal extends StatelessWidget {
     );
   }
 
-  /// Builds the drag handle at the top of the modal
   Widget _buildDragHandle(BuildContext context) {
     return Container(
       width: 40,
@@ -191,24 +151,12 @@ class BaseModal extends StatelessWidget {
   }
 }
 
-/// A standard button row for modal footers with consistent styling
 class ModalFooter extends StatelessWidget {
-  /// Primary action button
   final Widget? primaryButton;
-
-  /// Secondary action button
   final Widget? secondaryButton;
-
-  /// Additional buttons
   final List<Widget>? additionalButtons;
-
-  /// Spacing between buttons
   final double spacing;
-
-  /// Padding around the entire footer
   final EdgeInsetsGeometry padding;
-
-  /// Whether to show a divider above the footer
   final bool showDivider;
 
   const ModalFooter({
@@ -241,22 +189,18 @@ class ModalFooter extends StatelessWidget {
   List<Widget> _buildButtons() {
     final buttons = <Widget>[];
 
-    // Add secondary button if provided
     if (secondaryButton != null) {
       buttons.add(Expanded(child: secondaryButton!));
     }
 
-    // Add spacing between buttons if both are provided
     if (secondaryButton != null && primaryButton != null) {
       buttons.add(SizedBox(width: spacing));
     }
 
-    // Add primary button if provided
     if (primaryButton != null) {
       buttons.add(Expanded(child: primaryButton!));
     }
 
-    // Add additional buttons
     if (additionalButtons != null && additionalButtons!.isNotEmpty) {
       for (final button in additionalButtons!) {
         buttons.add(SizedBox(width: spacing));

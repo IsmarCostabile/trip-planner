@@ -82,7 +82,7 @@ class _UserSearchFieldState extends State<UserSearchField> {
     widget.onUserSelected(user);
     setState(() {
       _showResults = false;
-      _controller.clear(); // Automatically clear the search field
+      _controller.clear();
     });
     _focusNode.unfocus();
   }
@@ -94,7 +94,6 @@ class _UserSearchFieldState extends State<UserSearchField> {
   }
 
   String? _getProfilePictureUrl(Map<String, dynamic> user) {
-    // Try common keys for Firebase Storage URLs
     if (_isValidHttpUrl(user['profilePictureUrl']))
       return user['profilePictureUrl'];
     if (_isValidHttpUrl(user['photoURL'])) return user['photoURL'];

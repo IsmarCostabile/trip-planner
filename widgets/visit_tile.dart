@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
 import 'package:trip_planner/widgets/modals/edit_visit_time_modal.dart';
 
-/// A widget that displays a single visit item with styling
 class VisitTile extends StatelessWidget {
   final Visit visit;
   final Future<bool?> Function(DismissDirection)? confirmDismiss;
@@ -54,38 +53,28 @@ class VisitTile extends StatelessWidget {
     final locationName = visit.location?.name ?? 'Unknown Location';
     final theme = Theme.of(context);
 
-    // Create a row of widgets for the subtitle with small grey cards
     final timeSubtitleWidget = GestureDetector(
       onTap: () {
-        // Show the edit visit time modal with proper callback
         EditVisitTimeModal.show(
           context: context,
           visit: visit,
           onSave: (DateTime newStartTime, DateTime newEndTime) async {
-            // Calculate new duration in minutes
             final newDuration = newEndTime.difference(newStartTime).inMinutes;
 
-            // Handle case where end time is before start time (next day)
             final adjustedDuration =
-                newDuration < 0
-                    ? newDuration +
-                        (24 * 60) // Add a day in minutes
-                    : newDuration;
+                newDuration < 0 ? newDuration + (24 * 60) : newDuration;
 
-            // Create updated visit with new time and duration
             final updatedVisit = visit.copyWith(
               visitTime: newStartTime,
               visitDuration: adjustedDuration,
             );
 
             try {
-              // Update visit using TripDataService
               final tripDataService = Provider.of<TripDataService>(
                 context,
                 listen: false,
               );
 
-              // Get the tripDayId for this visit
               String? tripDayId;
               for (final tripDay in tripDataService.selectedTripDays) {
                 if (tripDataService
@@ -99,7 +88,6 @@ class VisitTile extends StatelessWidget {
               if (tripDayId != null) {
                 await tripDataService.updateVisit(tripDayId, updatedVisit);
 
-                // Show success message
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Visit time updated')),
@@ -107,7 +95,6 @@ class VisitTile extends StatelessWidget {
                 }
               }
             } catch (e) {
-              // Show error message if update fails
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Error updating visit time: $e')),
@@ -119,7 +106,6 @@ class VisitTile extends StatelessWidget {
       },
       child: Row(
         children: [
-          // Start time in an elevated grey card
           Material(
             elevation: 1,
             borderRadius: BorderRadius.circular(4),
@@ -136,12 +122,10 @@ class VisitTile extends StatelessWidget {
             ),
           ),
 
-          // Show duration and end time if available
           if (visit.visitDuration > 0) ...[
             const SizedBox(width: 1),
             Text(' - ', style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(width: 1),
-            // End time in an elevated grey card
             Material(
               elevation: 1,
               borderRadius: BorderRadius.circular(4),
@@ -166,8 +150,6 @@ class VisitTile extends StatelessWidget {
         ],
       ),
     );
-
-    // Create expandable content widget
     Widget? expandableContent;
 
     if (visit.notes != null && visit.notes!.isNotEmpty ||
@@ -232,7 +214,7 @@ class VisitTile extends StatelessWidget {
     return RepaintBoundary(
       child: Semantics(
         label: '$locationName visit',
-        value: timeDescription, // Using the string version for semantics
+        value: timeDescription,
         hint: visit.notes != null ? 'Has notes' : null,
         child: BaseListTile(
           title: locationName,
@@ -245,7 +227,6 @@ class VisitTile extends StatelessWidget {
           onTap:
               expandableContent == null
                   ? () {
-                    // TODO: Implement navigation to visit details page
                     print('Tapped on visit: ${visit.id}');
                   }
                   : null,

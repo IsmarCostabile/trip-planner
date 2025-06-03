@@ -29,7 +29,6 @@ class _TripParticipantsListState extends State<TripParticipantsList> {
   }
 
   void _addParticipant(Map<String, dynamic> userData) {
-    // Check if user is already a participant
     final exists = _participants.any((p) => p.uid == userData['uid']);
     if (exists) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -40,20 +39,17 @@ class _TripParticipantsListState extends State<TripParticipantsList> {
       return;
     }
 
-    // Current user is trip owner and is auto-accepted
-    // Other participants start with pending status until they accept
     final isCurrentUser = userData['uid'] == widget.currentUserId;
     final invitationStatus =
         isCurrentUser ? InvitationStatus.accepted : InvitationStatus.pending;
 
-    // Get the photoURL from the userData
     final String? photoUrl = userData['photoURL'] ?? userData['photoUrl'];
 
     final newParticipant = TripParticipant(
       uid: userData['uid'],
       username: userData['username'],
       email: userData['email'],
-      photoUrl: photoUrl, // Include the photoURL when creating the participant
+      photoUrl: photoUrl,
       invitationStatus: invitationStatus,
     );
 
@@ -61,20 +57,6 @@ class _TripParticipantsListState extends State<TripParticipantsList> {
       _participants.add(newParticipant);
     });
     widget.onParticipantsChanged(_participants);
-
-    // Create an invitation if this is not the current user
-    if (!isCurrentUser) {
-      _createInvitationForParticipant(newParticipant);
-    }
-  }
-
-  void _createInvitationForParticipant(TripParticipant participant) async {
-    try {
-      // Skip creating invitation now since we don't have the trip ID yet
-      // Invitations will be created after the trip is saved in AddParticipantModal
-    } catch (e) {
-      debugPrint('Error creating invitation: $e');
-    }
   }
 
   void _removeParticipant(int index) {

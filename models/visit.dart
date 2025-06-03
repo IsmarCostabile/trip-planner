@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'attachment.dart';
 import 'location.dart';
 
 class Visit {
@@ -8,10 +7,7 @@ class Visit {
   Location? location; // Actual location object (can be loaded separately)
   final DateTime visitTime;
   final int visitDuration; // Duration in minutes
-  final String? notes;
-  final double? cost; // Optional cost of the visit
-  final List<Attachment> photos;
-  final List<Attachment> files;
+  final String? notes; // Optional cost of the visit
 
   Visit({
     required this.id,
@@ -20,25 +16,10 @@ class Visit {
     this.location,
     this.visitDuration = 0,
     this.notes,
-    this.cost,
-    this.photos = const [],
-    this.files = const [],
   });
 
   factory Visit.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    final List<Attachment> photos = [];
-    if (data['photos'] != null) {
-      for (final photo in data['photos']) {
-        photos.add(Attachment.fromMap(photo));
-      }
-    }
-    final List<Attachment> files = [];
-    if (data['files'] != null) {
-      for (final file in data['files']) {
-        files.add(Attachment.fromMap(file));
-      }
-    }
 
     // Helper function to handle ISO8601 date strings
     DateTime parseDate(dynamic dateValue) {
@@ -63,27 +44,10 @@ class Visit {
       visitTime: parseDate(data['visitTime']),
       visitDuration: data['visitDuration'] ?? 0,
       notes: data['notes'],
-      cost: (data['cost'] as num?)?.toDouble(),
-      photos: photos,
-      files: files,
     );
   }
 
   factory Visit.fromMap(Map<String, dynamic> map) {
-    final List<Attachment> photos = [];
-    if (map['photos'] != null) {
-      for (final photo in map['photos']) {
-        photos.add(Attachment.fromMap(photo));
-      }
-    }
-
-    final List<Attachment> files = [];
-    if (map['files'] != null) {
-      for (final file in map['files']) {
-        files.add(Attachment.fromMap(file));
-      }
-    }
-
     // Parse location data if it exists
     Location? location;
     if (map['location'] != null) {
@@ -101,9 +65,6 @@ class Visit {
       visitTime: DateTime.parse(map['visitTime']),
       visitDuration: map['visitDuration'] ?? 0,
       notes: map['notes'],
-      cost: map['cost'] != null ? (map['cost'] as num).toDouble() : null,
-      photos: photos,
-      files: files,
     );
   }
 
@@ -116,9 +77,6 @@ class Visit {
               .toIso8601String(), // Convert DateTime to String instead of Timestamp
       'visitDuration': visitDuration,
       'notes': notes,
-      'cost': cost,
-      'photos': photos.map((photo) => photo.toMap()).toList(),
-      'files': files.map((file) => file.toMap()).toList(),
     };
   }
 
@@ -130,9 +88,6 @@ class Visit {
       'visitTime': visitTime.toIso8601String(),
       'visitDuration': visitDuration,
       'notes': notes,
-      'cost': cost,
-      'photos': photos.map((photo) => photo.toMap()).toList(),
-      'files': files.map((file) => file.toMap()).toList(),
     };
   }
 
@@ -145,8 +100,6 @@ class Visit {
     double? rating,
     double? cost,
     String? costCurrency,
-    List<Attachment>? photos,
-    List<Attachment>? files,
   }) {
     return Visit(
       id: id,
@@ -155,9 +108,6 @@ class Visit {
       visitTime: visitTime ?? this.visitTime,
       visitDuration: visitDuration ?? this.visitDuration,
       notes: notes ?? this.notes,
-      cost: cost ?? this.cost,
-      photos: photos ?? this.photos,
-      files: files ?? this.files,
     );
   }
 

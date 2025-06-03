@@ -174,34 +174,24 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  // Define the pages for the IndexedStack
-  // Add rootContext parameter to ProfilePage
   static final List<Widget> _pages = <Widget>[
     const MapPage(),
     const ItineraryPage(),
-    // Pass the BuildContext from MyHomePage down to ProfilePage
     Builder(builder: (context) => ProfilePage(rootContext: context)),
   ];
 
   @override
   Widget build(BuildContext context) {
-    // Select only the trip color needed for the BottomNavigationBar
     final Color tripColor = context.select(
       (TripDataService service) => service.selectedTrip?.color ?? Colors.teal,
     );
 
-    // If still checking invitations, show loading
     if (_checkingInvitations) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Build the main UI
     return Scaffold(
-      body: IndexedStack(
-        // Keeps state of inactive tabs
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         items: const <BottomNavigationBarItem>[
@@ -213,9 +203,9 @@ class _MyHomePageState extends State<MyHomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         currentIndex: _selectedIndex,
-        onTap: _onItemTapped, // Updates _selectedIndex via setState
-        type: BottomNavigationBarType.fixed, // Keep labels visible
-        fixedColor: tripColor, // Use the selected trip color
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
+        fixedColor: tripColor,
       ),
     );
   }

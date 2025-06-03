@@ -1,60 +1,23 @@
 import 'package:flutter/material.dart';
 
-/// A base list tile widget that provides consistent styling and behavior
-/// for different types of list items throughout the app.
 class BaseListTile extends StatefulWidget {
-  /// The primary title text to display
   final String title;
-
-  /// Optional subtitle widget
   final Widget? subtitle;
-
-  /// Optional leading widget (left side)
   final Widget? leading;
-
-  /// Optional trailing widget (right side)
   final Widget? trailing;
-
-  /// Optional callback when the tile is tapped
   final VoidCallback? onTap;
-
-  /// Optional margin to apply to the card
   final EdgeInsetsGeometry margin;
-
-  /// Optional content padding inside the tile
   final EdgeInsetsGeometry? contentPadding;
-
-  /// Optional elevation for the card
   final double elevation;
-
-  /// Optional badge to show on the tile (e.g., for notifications or counts)
   final Widget? badge;
-
-  /// Optional expandable content to show when tile is expanded
   final Widget? expandableContent;
-
-  /// Whether the tile should be expandable
   final bool isExpandable;
-
-  /// Optional callback to confirm dismissal (return true to dismiss)
   final Future<bool?> Function(DismissDirection)? confirmDismiss;
-
-  /// Optional callback when dismissed
   final void Function()? onDismissed;
-
-  /// Optional initial expanded state
   final bool initiallyExpanded;
-
-  /// Optional callback when expansion state changes
   final void Function(bool)? onExpansionChanged;
-
-  /// Optional dense mode for more compact tiles
   final bool dense;
-
-  /// Whether the tile should be dismissible
   final bool isDismissible;
-
-  /// Optional text style for the title
   final TextStyle? titleTextStyle;
 
   const BaseListTile({
@@ -137,9 +100,7 @@ class _BaseListTileState extends State<BaseListTile>
           direction: DismissDirection.endToStart,
           background: Container(
             margin: widget.margin,
-            decoration: BoxDecoration(
-              color: Colors.red, // match Card radius
-            ),
+            decoration: BoxDecoration(color: Colors.red),
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: const Icon(Icons.exit_to_app, color: Colors.white),
@@ -158,13 +119,9 @@ class _BaseListTileState extends State<BaseListTile>
       color: Colors.grey.shade50,
       margin: widget.margin,
       elevation: widget.elevation,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(
-          8,
-        ), // Match the background container radius
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // Make column as small as possible
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Stack(

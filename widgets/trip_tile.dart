@@ -7,8 +7,7 @@ class TripTile extends StatelessWidget {
   final bool isSelected;
   final Function(Trip trip) onTripSelected;
   final Function(Trip trip) onTripLeave;
-  // Removed dateFormat parameter
-  final Color? borderColor; // Added borderColor parameter
+  final Color? borderColor;
 
   const TripTile({
     Key? key,
@@ -16,35 +15,22 @@ class TripTile extends StatelessWidget {
     required this.isSelected,
     required this.onTripSelected,
     required this.onTripLeave,
-    // Removed dateFormat from constructor
-    this.borderColor, // Added to constructor
+    this.borderColor,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Wrap BaseListTile with a Container to apply the border
     return Container(
-      margin: const EdgeInsets.only(bottom: 8.0), // Apply margin here
+      margin: const EdgeInsets.only(bottom: 8.0),
       decoration: BoxDecoration(
         border:
             borderColor != null
-                ? Border.all(
-                  color: borderColor!,
-                  width: 1.5,
-                ) // Apply border if color exists
-                : Border.all(
-                  color: Colors.grey.shade300,
-                  width: 1.0,
-                ), // Default border
-        borderRadius: BorderRadius.circular(
-          8.0,
-        ), // Match with BaseListTile's border radius
+                ? Border.all(color: borderColor!, width: 1.5)
+                : Border.all(color: Colors.grey.shade300, width: 1.0),
+        borderRadius: BorderRadius.circular(8.0),
       ),
       child: ClipRRect(
-        // Clip the BaseListTile to the rounded corners
-        borderRadius: BorderRadius.circular(
-          8.0,
-        ), // Match with BaseListTile's border radius
+        borderRadius: BorderRadius.circular(8.0),
         child: BaseListTile(
           title: trip.name,
           subtitle: Text(
@@ -57,8 +43,8 @@ class TripTile extends StatelessWidget {
           ),
           trailing: const Icon(Icons.expand_more),
           onTap: () => onTripSelected(trip),
-          elevation: 0, // Keep flat look
-          margin: EdgeInsets.zero, // Margin is now handled by the Container
+          elevation: 0,
+          margin: EdgeInsets.zero,
           isExpandable: true,
           expandableContent: _buildExpandableContent(context),
           confirmDismiss: (direction) => _confirmDismiss(context),
@@ -179,8 +165,6 @@ class TripTile extends StatelessWidget {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
     final year = date.year.toString().substring(2);
-    // Defaulting to dd/mm/yy format
     return '$day/$month/$year';
-    // Removed conditional formatting based on dateFormat
   }
 }
