@@ -8,7 +8,6 @@ import 'package:trip_planner/widgets/base/base_modal.dart';
 import 'package:trip_planner/widgets/trip_participants_list.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EditParticipantsListModal extends StatefulWidget {
   final Trip trip;
@@ -33,7 +32,6 @@ class _EditParticipantsListModalState extends State<EditParticipantsListModal> {
     _participants = List.from(widget.trip.participants);
   }
 
-  // Method to update participants and save changes
   Future<void> _updateParticipants(
     List<TripParticipant> updatedParticipants,
   ) async {
@@ -42,7 +40,6 @@ class _EditParticipantsListModalState extends State<EditParticipantsListModal> {
     });
   }
 
-  // Method to save changes to the trip
   Future<void> _saveChanges() async {
     if (user == null) return;
 
@@ -52,30 +49,24 @@ class _EditParticipantsListModalState extends State<EditParticipantsListModal> {
     });
 
     try {
-      // Get the trip data service
       final tripDataService = Provider.of<TripDataService>(
         context,
         listen: false,
       );
 
-      // Create a copy of the trip with updated participants
       final updatedTrip = widget.trip.copyWith(participants: _participants);
 
-      // Get reference to the trip document in Firestore
       final tripRef = FirebaseFirestore.instance
           .collection('trips')
           .doc(widget.trip.id);
 
-      // Update the trip in Firestore with the new participants list
       await tripRef.update({
         'participants': _participants.map((p) => p.toMap()).toList(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      // Update the trip in the local cache
       tripDataService.updateTrip(updatedTrip);
 
-      // Process any pending invitations
       final newParticipants =
           _participants
               .where(
@@ -84,13 +75,11 @@ class _EditParticipantsListModalState extends State<EditParticipantsListModal> {
               .toList();
 
       for (final participant in newParticipants) {
-        // Skip current user or already accepted participants
         if (participant.uid == user!.uid ||
             participant.invitationStatus == InvitationStatus.accepted) {
           continue;
         }
 
-        // Create an invitation for the new participant
         await _invitationService.createInvitation(
           tripId: widget.trip.id,
           tripName: widget.trip.name,
@@ -100,7 +89,7 @@ class _EditParticipantsListModalState extends State<EditParticipantsListModal> {
       }
 
       if (mounted) {
-        Navigator.of(context).pop(true); // Pop with success result
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
@@ -117,14 +106,12 @@ class _EditParticipantsListModalState extends State<EditParticipantsListModal> {
     return BaseModal(
       initialChildSize: 0.8,
       maxChildSize: 0.95,
-      isScrollable:
-          false, // Keep this false to let inner components handle scrolling
+      isScrollable: false,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               children: [
                 Expanded(
@@ -142,8 +129,6 @@ class _EditParticipantsListModalState extends State<EditParticipantsListModal> {
               ],
             ),
             const SizedBox(height: 24),
-
-            // Error message
             if (_error != null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
@@ -159,8 +144,6 @@ class _EditParticipantsListModalState extends State<EditParticipantsListModal> {
               ),
               const SizedBox(height: 16),
             ],
-
-            // Participants List - Set a specific height to avoid layout issues
             Expanded(
               child: TripParticipantsList(
                 participants: _participants,
@@ -168,8 +151,6 @@ class _EditParticipantsListModalState extends State<EditParticipantsListModal> {
                 currentUserId: user?.uid ?? '',
               ),
             ),
-
-            // Save button
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -193,14 +174,13 @@ class _EditParticipantsListModalState extends State<EditParticipantsListModal> {
   }
 }
 
-// Helper function to show the participants management modal
 Future<bool?> showParticipantsListModal({
   required BuildContext context,
   required Trip trip,
 }) {
   return showAppModal<bool>(
     context: context,
-    initialChildSize: 0.85, // Start a bit larger to avoid scrolling issues
+    initialChildSize: 0.85,
     minChildSize: 0.6,
     maxChildSize: 0.95,
     isScrollControlled: true,

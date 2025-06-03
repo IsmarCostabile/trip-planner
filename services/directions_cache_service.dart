@@ -1,36 +1,25 @@
-import 'dart:async'; // Add import for StreamSubscription and StreamController
+import 'dart:async';
 import 'package:trip_planner/services/directions_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:trip_planner/models/location.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart'; // Add missing Provider import
+import 'package:provider/provider.dart';
 
-/// A service that caches direction results to reduce API calls
 class DirectionsCacheService {
-  // In-memory cache for direction results
-  // Key format: "${originLat}_${originLng}_${destLat}_${destLng}_${travelMode}"
   final Map<String, CachedDirectionResult> _cache = {};
-
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  // Stream controllers for travel mode preferences
   final Map<String, StreamController<String>> _travelModeStreamControllers = {};
   final Map<String, StreamSubscription> _travelModeSubscriptions = {};
-
-  // Cache expiration duration (30 minutes for in-memory, 7 days for Firestore)
   static const Duration _inMemoryCacheDuration = Duration(minutes: 30);
   static const Duration _firestoreCacheDuration = Duration(days: 7);
 
-  /// Get cached directions if available and not expired
-  /// Checks in-memory cache first, then Firestore
   Future<DirectionsResult?> getDirections(
     Location origin,
     Location destination,
     String travelMode, {
     String? tripId,
   }) async {
-    // Skip if coordinates are null
     if (origin.coordinates == null || destination.coordinates == null) {
       return null;
     }
@@ -48,36 +37,28 @@ class DirectionsCacheService {
       travelMode,
     );
 
-    // Check in-memory cache first
     final cachedResult = _cache[key];
     if (cachedResult != null) {
-      // Check if cache is still valid
       if (DateTime.now().difference(cachedResult.timestamp) <
           _inMemoryCacheDuration) {
         return cachedResult.result;
       } else {
-        // Remove expired cache entry
         _cache.remove(key);
       }
     }
 
-    // If not in memory cache or expired, try Firestore
     try {
-      // Try to read from shared collection first (no trip ID required)
       final sharedDocRef = _firestore.collection('directionsCache').doc(key);
 
       final sharedDoc = await sharedDocRef.get();
       if (sharedDoc.exists) {
         final data = sharedDoc.data();
         if (data != null) {
-          // Check if Firestore cache is expired
           final timestamp = data['timestamp'] as Timestamp;
           if (DateTime.now().difference(timestamp.toDate()) <
               _firestoreCacheDuration) {
-            // Convert Firestore data to DirectionsResult
             final result = DirectionsResult.fromMap(data);
 
-            // Store in memory cache to avoid future Firestore reads
             _cache[key] = CachedDirectionResult(
               result: result,
               timestamp: timestamp.toDate(),
@@ -85,13 +66,11 @@ class DirectionsCacheService {
 
             return result;
           } else {
-            // Delete expired cache entry
             await sharedDocRef.delete();
           }
         }
       }
 
-      // If no shared cache and tripId is provided, try trip-specific cache
       if (tripId != null) {
         final tripDocRef = _firestore
             .collection('trips')
@@ -103,14 +82,11 @@ class DirectionsCacheService {
         if (tripDoc.exists) {
           final data = tripDoc.data();
           if (data != null) {
-            // Check if Firestore cache is expired
             final timestamp = data['timestamp'] as Timestamp;
             if (DateTime.now().difference(timestamp.toDate()) <
                 _firestoreCacheDuration) {
-              // Convert Firestore data to DirectionsResult
               final result = DirectionsResult.fromMap(data);
 
-              // Store in memory cache to avoid future Firestore reads
               _cache[key] = CachedDirectionResult(
                 result: result,
                 timestamp: timestamp.toDate(),
@@ -118,21 +94,18 @@ class DirectionsCacheService {
 
               return result;
             } else {
-              // Delete expired cache entry
               await tripDocRef.delete();
             }
           }
         }
       }
     } catch (e) {
-      // If Firestore read fails, just continue without the cached data
       print('Error reading from Firestore cache: $e');
     }
 
     return null;
   }
 
-  /// Store directions result in both in-memory cache and Firestore
   Future<void> storeDirections(
     Location origin,
     Location destination,
@@ -140,7 +113,6 @@ class DirectionsCacheService {
     DirectionsResult result, {
     String? tripId,
   }) async {
-    // Skip if coordinates are null
     if (origin.coordinates == null || destination.coordinates == null) {
       return;
     }
@@ -158,20 +130,16 @@ class DirectionsCacheService {
       travelMode,
     );
 
-    // Store in memory cache
     _cache[key] = CachedDirectionResult(
       result: result,
       timestamp: DateTime.now(),
     );
 
     try {
-      // Create a map for Firestore storage
       final dataToStore = result.toMap();
 
-      // Always store in shared collection for reuse across trips
       await _firestore.collection('directionsCache').doc(key).set(dataToStore);
 
-      // If tripId is provided, also store in trip-specific collection
       if (tripId != null) {
         await _firestore
             .collection('trips')
@@ -181,19 +149,16 @@ class DirectionsCacheService {
             .set(dataToStore);
       }
     } catch (e) {
-      // If Firestore write fails, we still have the in-memory cache
       print('Error saving to Firestore cache: $e');
     }
   }
 
-  /// Store travel mode preference for a specific route in a trip
   Future<void> storePreferredTravelMode(
     Location origin,
     Location destination,
     String travelMode, {
     required String tripId,
   }) async {
-    // Skip if coordinates are null or tripId missing
     if (origin.coordinates == null ||
         destination.coordinates == null ||
         tripId.isEmpty) {
@@ -212,7 +177,6 @@ class DirectionsCacheService {
 
       final preferenceKey = 'travel_mode_pref_${originId}_to_${destId}';
 
-      // Store the preference at trip level
       await _firestore
           .collection('trips')
           .doc(tripId)
@@ -231,13 +195,11 @@ class DirectionsCacheService {
     }
   }
 
-  /// Get travel mode preference for a specific route in a trip
   Future<String?> getPreferredTravelMode(
     Location origin,
     Location destination, {
     required String tripId,
   }) async {
-    // Skip if coordinates are null or tripId missing
     if (origin.coordinates == null ||
         destination.coordinates == null ||
         tripId.isEmpty) {
@@ -277,13 +239,11 @@ class DirectionsCacheService {
     return null;
   }
 
-  /// Get a stream of travel mode preferences for a specific route
   Stream<String> listenToTravelModePreference(
     Location origin,
     Location destination, {
     required String tripId,
   }) {
-    // Create a key for this origin-destination pair
     final originId =
         origin.placeId.isNotEmpty
             ? origin.placeId
@@ -295,13 +255,10 @@ class DirectionsCacheService {
 
     final preferenceKey = 'travel_mode_pref_${originId}_to_${destId}';
 
-    // Check if a controller already exists for this key
     if (!_travelModeStreamControllers.containsKey(preferenceKey)) {
-      // Create a new controller
       _travelModeStreamControllers[preferenceKey] =
           StreamController<String>.broadcast();
 
-      // Subscribe to Firestore updates
       _travelModeSubscriptions[preferenceKey] = _firestore
           .collection('trips')
           .doc(tripId)
@@ -326,9 +283,7 @@ class DirectionsCacheService {
     return _travelModeStreamControllers[preferenceKey]!.stream;
   }
 
-  /// Dispose of resources
   void dispose() {
-    // Cancel all subscriptions and close all controllers
     for (final subscription in _travelModeSubscriptions.values) {
       subscription.cancel();
     }
@@ -339,7 +294,6 @@ class DirectionsCacheService {
     _travelModeSubscriptions.clear();
   }
 
-  /// Generate a unique cache key based on locations and travel mode
   String _generateKey(
     double originLat,
     double originLng,
@@ -350,17 +304,14 @@ class DirectionsCacheService {
     return "${originLat}_${originLng}_${destLat}_${destLng}_${travelMode}";
   }
 
-  /// Clear in-memory cache
   void clearCache() {
     _cache.clear();
   }
 
-  /// Clear trip-specific cache data
   Future<void> clearTripCache(String tripId) async {
     if (tripId.isEmpty) return;
 
     try {
-      // Clear travel preferences
       final prefsSnapshot =
           await _firestore
               .collection('trips')
@@ -376,13 +327,11 @@ class DirectionsCacheService {
         }
         await batch.commit();
 
-        // If there are more documents, recursively clear them
         if (prefsSnapshot.docs.length >= 100) {
           await clearTripCache(tripId);
         }
       }
 
-      // Clear directions cache
       final cacheSnapshot =
           await _firestore
               .collection('trips')
@@ -398,7 +347,6 @@ class DirectionsCacheService {
         }
         await batch.commit();
 
-        // If there are more documents, recursively clear them
         if (cacheSnapshot.docs.length >= 100) {
           await clearTripCache(tripId);
         }
@@ -409,7 +357,6 @@ class DirectionsCacheService {
   }
 }
 
-/// Class to store a cached result with its timestamp
 class CachedDirectionResult {
   final DirectionsResult result;
   final DateTime timestamp;

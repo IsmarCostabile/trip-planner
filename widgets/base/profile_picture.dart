@@ -1,28 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-/// A reusable widget for displaying profile pictures with fallback initials
 class ProfilePictureWidget extends StatelessWidget {
-  /// The URL of the profile picture to display
   final String? photoUrl;
-
-  /// The username to extract initials from when no photo is available
   final String? username;
-
-  /// The size (diameter) of the profile picture
   final double size;
-
-  /// Optional border color for the avatar
   final Color? borderColor;
-
-  /// Optional border width (no border if null)
   final double? borderWidth;
-
-  /// Background color when showing initials
   final Color? backgroundColor;
-
-  /// Optional callback when the avatar is tapped
   final VoidCallback? onTap;
 
   const ProfilePictureWidget({
@@ -36,7 +21,6 @@ class ProfilePictureWidget extends StatelessWidget {
     this.onTap,
   });
 
-  /// Checks if a URL string is a valid image URL
   bool _isValidImageUrl(String? url) {
     if (url == null || url.isEmpty) {
       debugPrint(
@@ -45,8 +29,6 @@ class ProfilePictureWidget extends StatelessWidget {
       return false;
     }
 
-    // Basic URL validation (must be http or https)
-    // Firebase Storage URLs should always start with https
     final isValidFormat =
         url.startsWith('http://') || url.startsWith('https://');
     if (!isValidFormat) {
@@ -56,7 +38,6 @@ class ProfilePictureWidget extends StatelessWidget {
       return false;
     }
 
-    // For Firebase Storage URLs, additionally check for firebasestorage.googleapis.com
     final isFirebaseStorage = url.contains('firebasestorage.googleapis.com');
     if (isFirebaseStorage) {
       debugPrint(
@@ -83,7 +64,6 @@ class ProfilePictureWidget extends StatelessWidget {
     Widget avatarContent;
 
     if (hasValidPhoto) {
-      // Use CachedNetworkImage for caching, error handling and loading indicator
       avatarContent = ClipRRect(
         borderRadius: BorderRadius.circular(size / 2),
         child: CachedNetworkImage(
@@ -130,7 +110,6 @@ class ProfilePictureWidget extends StatelessWidget {
         ),
       );
     } else {
-      // Show initials for invalid or missing photo URL
       debugPrint(
         'ProfilePictureWidget: Using initials fallback for: $username',
       );
@@ -153,7 +132,6 @@ class ProfilePictureWidget extends StatelessWidget {
       );
     }
 
-    // Apply border if specified
     Widget profileWidget = avatarContent;
     if (borderColor != null && borderWidth != null) {
       profileWidget = Container(
@@ -165,7 +143,6 @@ class ProfilePictureWidget extends StatelessWidget {
       );
     }
 
-    // Add tap functionality if specified
     if (onTap != null) {
       return GestureDetector(onTap: onTap, child: profileWidget);
     }
@@ -173,7 +150,6 @@ class ProfilePictureWidget extends StatelessWidget {
     return profileWidget;
   }
 
-  /// Returns the first letter of the username, or '?' if no username is available
   String _getInitials() {
     if (username == null || username!.isEmpty) return '?';
     return username![0].toUpperCase();

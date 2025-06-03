@@ -64,7 +64,7 @@ class LocationPreviewModal extends StatefulWidget {
 class _LocationPreviewModalState extends State<LocationPreviewModal> {
   bool _isSaving = false;
   bool _isLocationSaved = false;
-  bool _isOpeningHoursExpanded = false; // Add state for expansion
+  bool _isOpeningHoursExpanded = false;
 
   @override
   void initState() {
@@ -92,22 +92,19 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
           .collection('trips')
           .doc(widget.trip!.id);
 
-      // Get the photo URL if photos are available
       String? photoUrl;
       List<String>? photoUrls;
 
       if (widget.placeDetails.result.photos.isNotEmpty) {
-        // Create a list to store multiple photo URLs
         photoUrls =
             widget.placeDetails.result.photos
-                .take(5) // Limit to 5 photos to avoid excessive data
+                .take(5)
                 .map(
                   (photo) =>
                       'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photoReference}&key=${PlacesService.apiKey}',
                 )
                 .toList();
 
-        // Set the main photo URL as the first photo
         photoUrl = photoUrls.first;
       }
 
@@ -120,13 +117,11 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
           widget.placeDetails.result.geometry?.location.lng ?? 0,
         ),
         address: widget.placeDetails.result.formattedAddress,
-        photoUrl: photoUrl, // Add the primary photo URL
-        photoUrls: photoUrls, // Add all photo URLs
+        photoUrl: photoUrl,
+        photoUrls: photoUrls,
       );
 
-      // Check if we need to remove or add the location
       if (_isLocationSaved) {
-        // Remove location
         final updatedLocations =
             widget.trip!.savedLocations
                 .where((loc) => loc.placeId != location.placeId)
@@ -137,23 +132,18 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
-        // Create updated trip model
         final updatedTrip = widget.trip!.copyWith(
           savedLocations: updatedLocations,
           updatedAt: DateTime.now(),
         );
 
-        // Notify parent about the update
         widget.onLocationSaved?.call(updatedTrip);
       } else {
-        // Add location - use the saveLocationWithPhoto method
-        // We're not uploading a local photo here as we're using URLs from Google Places API
         final savedLocation = await Location.saveLocationWithPhoto(
           location: location,
-          uploadLocalPhoto: false, // No local photo to upload in this case
+          uploadLocalPhoto: false,
         );
 
-        // Add to trip's saved locations
         final updatedLocations = [
           ...widget.trip!.savedLocations,
           savedLocation,
@@ -164,13 +154,11 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
-        // Create updated trip model
         final updatedTrip = widget.trip!.copyWith(
           savedLocations: updatedLocations,
           updatedAt: DateTime.now(),
         );
 
-        // Notify parent about the update
         widget.onLocationSaved?.call(updatedTrip);
       }
 
@@ -233,7 +221,6 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
   }
 
   Future<void> _addToItinerary() async {
-    // Ensure selectedTripDay is available
     if (widget.selectedTripDay == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -243,7 +230,6 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
       return;
     }
 
-    // Check trip data
     if (widget.trip == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Error: Trip data missing.')),
@@ -252,10 +238,8 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
     }
 
     final tripDay = widget.selectedTripDay!;
-    // final tripData = widget.trip!; // Not needed directly
     final placeDetailsResult = widget.placeDetails.result;
 
-    // Create a place search result from place details
     final place = PlacesSearchResult(
       name: placeDetailsResult.name,
       formattedAddress: placeDetailsResult.formattedAddress ?? '',
@@ -267,10 +251,9 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
         ),
       ),
       types: placeDetailsResult.types.toList(),
-      reference: placeDetailsResult.reference ?? '', // Use null-aware operator
+      reference: placeDetailsResult.reference ?? '',
     );
 
-    // Return the data needed to show the AddVisitModal
     Navigator.of(
       context,
     ).pop({'action': 'showAddVisitModal', 'place': place, 'tripDay': tripDay});
@@ -281,27 +264,21 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       children: [
-        // Photo carousel
         if (widget.placeDetails.result.photos.isNotEmpty)
           LocationPhotoCarousel(
             photos: widget.placeDetails.result.photos,
             apiKey: PlacesService.apiKey,
           ),
-        // Place details
         Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                // Wrap name and rating in a Row
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween, // Align items
-                crossAxisAlignment:
-                    CrossAxisAlignment.start, // Align items vertically
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    // Allow name to take available space
                     child: Text(
                       widget.placeDetails.result.name,
                       style: const TextStyle(
@@ -310,10 +287,9 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
                       ),
                     ),
                   ),
-                  if (widget.placeDetails.result.rating !=
-                      null) // Show rating only if available
+                  if (widget.placeDetails.result.rating != null)
                     Row(
-                      mainAxisSize: MainAxisSize.min, // Take minimum space
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         ...List.generate(5, (index) {
                           final rating = widget.placeDetails.result.rating!;
@@ -350,15 +326,12 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
                         padding: const EdgeInsets.only(right: 16),
                         child: FilledButton.icon(
                           style: FilledButton.styleFrom(
-                            // Style the call button
                             backgroundColor: Colors.green,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 8,
-                            ), // Adjust padding
-                            textStyle: const TextStyle(
-                              fontSize: 14,
-                            ), // Adjust font size
+                            ),
+                            textStyle: const TextStyle(fontSize: 14),
                           ),
                           onPressed:
                               () => _launchPhone(
@@ -368,35 +341,26 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
                                     .result
                                     .formattedPhoneNumber!,
                               ),
-                          icon: const Icon(
-                            Icons.phone,
-                            size: 18,
-                          ), // Adjust icon size
+                          icon: const Icon(Icons.phone, size: 18),
                           label: const Text('Call'),
                         ),
                       ),
                     if (widget.placeDetails.result.website != null)
                       FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          // Style the website button
                           backgroundColor: Colors.lightBlue,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 8,
-                          ), // Adjust padding
-                          textStyle: const TextStyle(
-                            fontSize: 14,
-                          ), // Adjust font size
+                          ),
+                          textStyle: const TextStyle(fontSize: 14),
                         ),
                         onPressed:
                             () => _launchUrl(
                               context,
                               widget.placeDetails.result.website!,
                             ),
-                        icon: const Icon(
-                          Icons.language,
-                          size: 18,
-                        ), // Adjust icon size
+                        icon: const Icon(Icons.language, size: 18),
                         label: const Text('Website'),
                       ),
                   ],
@@ -406,7 +370,6 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
                   null) ...[
                 const SizedBox(height: 16),
                 InkWell(
-                  // Make the header tappable
                   onTap: () {
                     setState(() {
                       _isOpeningHoursExpanded = !_isOpeningHoursExpanded;
@@ -423,7 +386,6 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
                         ),
                       ),
                       Icon(
-                        // Add expand/collapse icon
                         _isOpeningHoursExpanded
                             ? Icons.expand_less
                             : Icons.expand_more,
@@ -432,7 +394,6 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
                   ),
                 ),
                 if (_isOpeningHoursExpanded) ...[
-                  // Conditionally show hours
                   const SizedBox(height: 8),
                   ...widget.placeDetails.result.openingHours!.weekdayText.map(
                     (hours) => Padding(
@@ -471,8 +432,7 @@ class _LocationPreviewModalState extends State<LocationPreviewModal> {
         onPressed: _isSaving ? null : _toggleSaveLocation,
         icon:
             _isSaving
-                ? SizedBox(
-                  // Removed const
+                ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),

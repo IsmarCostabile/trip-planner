@@ -40,7 +40,6 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
     }
 
     try {
-      // Find the invitation for this trip and the current user
       final invitationsSnapshot =
           await FirebaseFirestore.instance
               .collection('tripInvitations')
@@ -50,7 +49,6 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
               .limit(1)
               .get();
 
-      // Load the trip details
       final tripDoc =
           await FirebaseFirestore.instance
               .collection('trips')
@@ -65,7 +63,6 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
         return;
       }
 
-      // Set invitation if found
       if (invitationsSnapshot.docs.isNotEmpty) {
         _invitation = TripInvitation.fromFirestore(
           invitationsSnapshot.docs.first,
@@ -93,13 +90,11 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
     });
 
     try {
-      // If accepting, update the trip participants
       if (accept) {
         final tripRef = FirebaseFirestore.instance
             .collection('trips')
             .doc(_trip!.id);
 
-        // Get current participants
         final tripDoc = await tripRef.get();
         if (!tripDoc.exists) {
           throw Exception('Trip no longer exists');
@@ -110,12 +105,10 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
           data['participants'] ?? [],
         );
 
-        // Check if user is already in participants list
         final existingIndex = participants.indexWhere(
           (p) => p['uid'] == user!.uid,
         );
 
-        // Create participant entry with accepted status
         final participant = {
           'uid': user!.uid,
           'username': user!.displayName ?? user!.email?.split('@')[0] ?? 'User',
@@ -125,28 +118,23 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
         };
 
         if (existingIndex >= 0) {
-          // Update existing participant
           participants[existingIndex] = participant;
         } else {
-          // Add new participant
           participants.add(participant);
         }
 
-        // Update trip document
         await tripRef.update({
           'participants': participants,
           'updatedAt': FieldValue.serverTimestamp(),
         });
       }
 
-      // Delete the invitation document (whether accepted or declined)
       final deleteSuccess = await _invitationService.deleteInvitation(
         _invitation!.id,
       );
 
       if (!deleteSuccess) {
         debugPrint('Warning: Failed to delete invitation ${_invitation!.id}');
-        // Continue anyway as this is not a critical failure
       }
 
       if (mounted) {
@@ -154,12 +142,12 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trip invitation accepted!')),
           );
-          Navigator.of(context).pop(true); // Return true to indicate acceptance
+          Navigator.of(context).pop(true);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trip invitation declined')),
           );
-          Navigator.of(context).pop(false); // Return false to indicate decline
+          Navigator.of(context).pop(false);
         }
       }
     } catch (e) {
@@ -170,7 +158,6 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
         });
       }
     } finally {
-      // Ensure _isProcessing is reset even if mounted check fails during error handling
       if (mounted && _isProcessing) {
         setState(() {
           _isProcessing = false;
@@ -179,7 +166,6 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
     }
   }
 
-  // Helper to format participants list
   String _formatParticipants(
     List<TripParticipant> participants,
     int maxToShow,
@@ -240,19 +226,17 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
       );
     }
 
-    // Get formatted participants string
     final participantsString = _formatParticipants(_trip!.participants, 2);
     final destinationName = _trip!.destination?.name ?? 'No destination set';
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Trip Invitation'),
-        backgroundColor: Colors.transparent, // Make AppBar transparent
-        elevation: 0, // Remove AppBar shadow
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      extendBodyBehindAppBar: true, // Allow body to extend behind AppBar
+      extendBodyBehindAppBar: true,
       body: Container(
-        // Background Decoration
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -263,13 +247,10 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center, // Center vertically
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Spacer(flex: 2), // Push content down a bit
-              // Invitation Header
+              const Spacer(flex: 2),
               const SizedBox(height: 30),
-
-              // Central Information Card
               Card(
                 elevation: 8,
                 shape: RoundedRectangleBorder(
@@ -281,7 +262,6 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Trip Name
                       Text(
                         _trip!.name,
                         style: const TextStyle(
@@ -293,8 +273,6 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
                       const SizedBox(height: 16),
                       const Divider(),
                       const SizedBox(height: 16),
-
-                      // Destination
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -316,8 +294,6 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
                         ],
                       ),
                       const SizedBox(height: 12),
-
-                      // Participants
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -339,9 +315,7 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
                   ),
                 ),
               ),
-
-              const Spacer(flex: 3), // Push buttons down
-              // Decision buttons
+              const Spacer(flex: 3),
               if (_isProcessing)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 30.0),
@@ -349,9 +323,7 @@ class _TripInvitationPageState extends State<TripInvitationPage> {
                 )
               else
                 Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: 30.0,
-                  ), // Add padding at the bottom
+                  padding: const EdgeInsets.only(bottom: 30.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [

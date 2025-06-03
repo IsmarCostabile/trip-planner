@@ -6,47 +6,39 @@ import 'package:trip_planner/models/location.dart';
 import 'package:trip_planner/models/trip_destination.dart';
 import 'package:trip_planner/services/places_service.dart';
 import 'package:trip_planner/services/trip_invitation_service.dart';
-import 'package:trip_planner/widgets/trip_participants_list_fixed.dart'; // Changed to use fixed version
+import 'package:trip_planner/widgets/trip_participants_list_fixed.dart.bak';
 import 'package:google_maps_webservice/places.dart' hide Location;
 import 'package:provider/provider.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
 import 'package:trip_planner/widgets/modals/button_tray.dart';
 import 'package:intl/intl.dart';
 
-// Renamed class
 class TripCreationPage extends StatefulWidget {
   const TripCreationPage({super.key});
 
-  // Updated show method to navigate to a full page
   static Future<bool?> show({required BuildContext context}) {
     return Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => const TripCreationPage(),
-        fullscreenDialog: true, // Present as a full-screen dialog
+        fullscreenDialog: true,
       ),
     );
   }
 
   @override
-  // Renamed state class
   State<TripCreationPage> createState() => _TripCreationPageState();
 }
 
-// Renamed state class
 class _TripCreationPageState extends State<TripCreationPage> {
-  // ... existing state variables ...
   final _formKey = GlobalKey<FormState>();
   int _currentStep = 0;
-  // Updated total steps since we're combining description and color selection with the first step
-  final int _totalSteps = 2; // Combined details step + Participants
+  final int _totalSteps = 2;
 
-  // Controllers
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _destinationController = TextEditingController();
 
-  // State
   final PlacesService _placesService = PlacesService();
   DateTime? _startDate;
   DateTime? _endDate;
@@ -55,15 +47,14 @@ class _TripCreationPageState extends State<TripCreationPage> {
   Location? _destination;
   List<PlacesSearchResult> _destinationSuggestions = [];
   bool _searchingDestination = false;
-  Color _selectedColor = Colors.blue; // Default color
+  Color _selectedColor = Colors.blue;
 
-  // Updated color palette to use custom CSS HEX colors
   final List<Color> _colorPalette = [
-    const Color(0xFFFBB13C), // Hunyadi Yellow
-    const Color(0xFF1098F7), // Dodger Blue
-    const Color(0xFFFB3640), // Imperial Red
-    const Color(0xFF0CCE6B), // Emerald
-    const Color(0xFFFF47DA), // Purple Pizzazz
+    const Color(0xFFFBB13C),
+    const Color(0xFF1098F7),
+    const Color(0xFFFB3640),
+    const Color(0xFF0CCE6B),
+    const Color(0xFFFF47DA),
   ];
 
   final user = FirebaseAuth.instance.currentUser;
@@ -89,7 +80,7 @@ class _TripCreationPageState extends State<TripCreationPage> {
       uid: user!.uid,
       username: initialUsername,
       email: user!.email,
-      photoUrl: user!.photoURL, // Include photoURL from Firebase Auth
+      photoUrl: user!.photoURL,
     );
     if (!mounted) return;
     setState(() {
@@ -109,7 +100,6 @@ class _TripCreationPageState extends State<TripCreationPage> {
                 ? data['username']
                 : initialUsername;
 
-        // Get photoURL from Firestore (which may be more up-to-date than Auth)
         final photoURL = data['photoURL'] ?? user!.photoURL;
 
         setState(() {
@@ -117,7 +107,7 @@ class _TripCreationPageState extends State<TripCreationPage> {
             uid: user!.uid,
             username: username,
             email: user!.email,
-            photoUrl: photoURL, // Include the photoURL
+            photoUrl: photoURL,
           );
         });
       }
@@ -128,43 +118,34 @@ class _TripCreationPageState extends State<TripCreationPage> {
     }
   }
 
-  // Updated to use showDateRangePicker with custom theme
   Future<void> _selectDateRange(BuildContext context) async {
-    final theme = Theme.of(context); // Get current theme
+    final theme = Theme.of(context);
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       initialDateRange:
           _startDate != null && _endDate != null
               ? DateTimeRange(start: _startDate!, end: _endDate!)
               : null,
-      firstDate: DateTime.now().subtract(
-        const Duration(days: 1),
-      ), // Allow today
+      firstDate: DateTime.now().subtract(const Duration(days: 1)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
-      // Add builder for theming
       builder: (context, child) {
         return Theme(
           data: theme.copyWith(
-            // Customize date picker theme here
             colorScheme: theme.colorScheme.copyWith(
-              primary: theme.primaryColor, // Use app's primary color
-              onPrimary: Colors.white, // Text on primary color
-              surface: theme.dialogBackgroundColor, // Background
-              onSurface: theme.textTheme.bodyLarge?.color, // Text color
+              primary: theme.primaryColor,
+              onPrimary: Colors.white,
+              surface: theme.dialogBackgroundColor,
+              onSurface: theme.textTheme.bodyLarge?.color,
             ),
             dialogBackgroundColor: theme.dialogBackgroundColor,
             buttonTheme: ButtonThemeData(
-              textTheme:
-                  ButtonTextTheme.primary, // Use primary color for buttons
+              textTheme: ButtonTextTheme.primary,
               colorScheme: theme.colorScheme.copyWith(
                 primary: theme.primaryColor,
               ),
             ),
-            // Optional: Customize text button style if needed
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: theme.primaryColor, // Button text color
-              ),
+              style: TextButton.styleFrom(foregroundColor: theme.primaryColor),
             ),
           ),
           child: child!,
@@ -179,8 +160,6 @@ class _TripCreationPageState extends State<TripCreationPage> {
     }
   }
 
-  // Removed _selectStartDate and _selectEndDate
-
   Future<void> _searchDestinations(String query) async {
     if (query.isEmpty) {
       setState(() => _destinationSuggestions = []);
@@ -194,7 +173,6 @@ class _TripCreationPageState extends State<TripCreationPage> {
       );
       if (!mounted) return;
 
-      // Convert predictions to list of Futures first
       final placeDetailsFutures = predictions
           .where((prediction) => prediction.placeId != null)
           .map(
@@ -204,7 +182,6 @@ class _TripCreationPageState extends State<TripCreationPage> {
             ),
           );
 
-      // Wait for all futures to complete
       final placeDetailsResults = await Future.wait(placeDetailsFutures);
 
       if (mounted) {
@@ -251,7 +228,6 @@ class _TripCreationPageState extends State<TripCreationPage> {
       _destinationController.text = place.name;
       _destinationSuggestions = [];
     });
-    // Dismiss keyboard
     FocusScope.of(context).unfocus();
   }
 
@@ -264,12 +240,8 @@ class _TripCreationPageState extends State<TripCreationPage> {
   }
 
   Future<void> _saveTrip() async {
-    // Final validation before saving
     if (!_formKey.currentState!.validate()) return;
-    // Date validation moved to step 0 check in _nextStep
-    // Destination validation moved to step 0 check in _nextStep
 
-    // Capture context before async operations
     final currentContext = context;
 
     setState(() => _isLoading = true);
@@ -278,7 +250,6 @@ class _TripCreationPageState extends State<TripCreationPage> {
       final tripRef = FirebaseFirestore.instance.collection('trips').doc();
       final tripId = tripRef.id;
 
-      // Create the initial TripDestination from the selected destination and dates
       final initialDestination = TripDestination(
         location: _destination!,
         startDate: _startDate!,
@@ -294,18 +265,15 @@ class _TripCreationPageState extends State<TripCreationPage> {
         'ownerId': user!.uid,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-        // Save the initial destination in the new 'destinations' list
         'destinations': [initialDestination.toMap()],
-        // Keep legacy destination for potential backward compatibility (optional)
         'destination': _destination!.toMap(),
-        'color': _selectedColor.value, // Add color to Firestore document
+        'color': _selectedColor.value,
       });
 
       final difference = _endDate!.difference(_startDate!).inDays + 1;
       final batch = FirebaseFirestore.instance.batch();
       for (var i = 0; i < difference; i++) {
         final date = _startDate!.add(Duration(days: i));
-        // Use a more robust ID generation for trip days
         final tripDayRef =
             FirebaseFirestore.instance.collection('tripDays').doc();
         batch.set(tripDayRef, {
@@ -318,7 +286,6 @@ class _TripCreationPageState extends State<TripCreationPage> {
       }
       await batch.commit();
 
-      // Create invitations for participants who are not the owner
       final invitationService = TripInvitationService();
       final nonOwnerParticipants =
           _participants.where((p) => p.uid != user!.uid).toList();
@@ -333,30 +300,22 @@ class _TripCreationPageState extends State<TripCreationPage> {
         );
       }
 
-      // Refresh user trips in the service
-      // Use currentContext.mounted check
       if (currentContext.mounted) {
         final tripDataService = Provider.of<TripDataService>(
-          currentContext, // Use captured context
+          currentContext,
           listen: false,
         );
-        await tripDataService.setSelectedTrip(
-          tripId,
-        ); // Automatically select the new trip
-        // No need to call loadUserTrips as we're using streams now
+        await tripDataService.setSelectedTrip(tripId);
 
-        // Pop using the captured context
-        Navigator.of(currentContext).pop(true); // Return true for success
+        Navigator.of(currentContext).pop(true);
       }
     } catch (e) {
-      // Use currentContext.mounted check
       if (currentContext.mounted) {
         ScaffoldMessenger.of(
-          currentContext, // Use captured context
+          currentContext,
         ).showSnackBar(SnackBar(content: Text('Error creating trip: $e')));
       }
     } finally {
-      // Use currentContext.mounted check
       if (currentContext.mounted) {
         setState(() => _isLoading = false);
       }
@@ -364,11 +323,8 @@ class _TripCreationPageState extends State<TripCreationPage> {
   }
 
   void _nextStep() {
-    // Validate current step before proceeding
     if (_formKey.currentState!.validate()) {
-      // Specific validation for steps
       if (_currentStep == 0) {
-        // Combined Name/Dest/Dates step
         if (_destination == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Please select a destination')),
@@ -382,12 +338,10 @@ class _TripCreationPageState extends State<TripCreationPage> {
           return;
         }
       }
-      // Removed validation for step 1 (Dates)
 
       if (_currentStep < _totalSteps - 1) {
         setState(() => _currentStep++);
       } else {
-        // Last step, trigger save
         _saveTrip();
       }
     }
@@ -401,10 +355,9 @@ class _TripCreationPageState extends State<TripCreationPage> {
 
   Widget _buildStepContent() {
     switch (_currentStep) {
-      case 0: // Name, Destination & Dates
+      case 0:
         return _buildNameDestinationDatesStep();
-      // case 1: // Dates - REMOVED
-      case 1: // Participants (was 4)
+      case 1:
         return _buildParticipantsStep();
       default:
         return const Center(child: Text('Unknown step'));
@@ -412,9 +365,7 @@ class _TripCreationPageState extends State<TripCreationPage> {
   }
 
   Widget _buildNameDestinationDatesStep() {
-    final DateFormat formatter = DateFormat(
-      'dd MMM',
-    ); // Changed format slightly
+    final DateFormat formatter = DateFormat('dd MMM');
     String dateRangeText = 'Select Dates';
     if (_startDate != null && _endDate != null) {
       dateRangeText =
@@ -423,7 +374,7 @@ class _TripCreationPageState extends State<TripCreationPage> {
     final theme = Theme.of(context);
     final inputBorder = OutlineInputBorder(
       borderSide: BorderSide(color: theme.dividerColor),
-      borderRadius: BorderRadius.circular(8.0), // Consistent border radius
+      borderRadius: BorderRadius.circular(8.0),
     );
     final focusedInputBorder = OutlineInputBorder(
       borderSide: BorderSide(color: theme.primaryColor, width: 2.0),
@@ -435,11 +386,9 @@ class _TripCreationPageState extends State<TripCreationPage> {
     );
 
     return ListView(
-      // Use ListView for scrollability within the step
-      padding: const EdgeInsets.all(16), // Use consistent padding
+      padding: const EdgeInsets.all(16),
       shrinkWrap: true,
       children: [
-        // Trip Name Field
         TextFormField(
           controller: _nameController,
           decoration: InputDecoration(
@@ -453,8 +402,7 @@ class _TripCreationPageState extends State<TripCreationPage> {
           validator:
               (value) => (value == null || value.isEmpty) ? 'Required' : null,
         ),
-        const SizedBox(height: 16), // Consistent spacing
-        // Destination Field
+        const SizedBox(height: 16),
         TextFormField(
           controller: _destinationController,
           decoration: InputDecoration(
@@ -477,17 +425,17 @@ class _TripCreationPageState extends State<TripCreationPage> {
                         ? const Padding(
                           padding: EdgeInsets.all(12.0),
                           child: SizedBox(
-                            width: 20, // Consistent size
-                            height: 20, // Consistent size
+                            width: 20,
+                            height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         )
                         : null),
           ),
-          readOnly: _destination != null, // Prevent editing after selection
+          readOnly: _destination != null,
           onChanged: (value) {
             if (_destination != null) {
-              _clearDestination(); // Clear if user types again
+              _clearDestination();
             }
             _searchDestinations(value);
           },
@@ -499,12 +447,11 @@ class _TripCreationPageState extends State<TripCreationPage> {
           },
         ),
 
-        // Destination Suggestions (if any)
         if (_destinationSuggestions.isNotEmpty)
           Container(
             margin: const EdgeInsets.only(top: 4, bottom: 8),
             decoration: BoxDecoration(
-              color: theme.cardColor, // Use card color for background
+              color: theme.cardColor,
               border: Border.all(color: theme.dividerColor),
               borderRadius: BorderRadius.circular(8.0),
               boxShadow: [
@@ -515,9 +462,7 @@ class _TripCreationPageState extends State<TripCreationPage> {
                 ),
               ],
             ),
-            constraints: const BoxConstraints(
-              maxHeight: 200, // Limit suggestion list height
-            ),
+            constraints: const BoxConstraints(maxHeight: 200),
             child: ListView.builder(
               padding: EdgeInsets.zero,
               shrinkWrap: true,
@@ -538,8 +483,7 @@ class _TripCreationPageState extends State<TripCreationPage> {
             ),
           ),
 
-        const SizedBox(height: 16), // Consistent spacing
-        // Date Range Field (using TextFormField for consistent style)
+        const SizedBox(height: 16),
         TextFormField(
           readOnly: true,
           controller: TextEditingController(text: dateRangeText),
@@ -554,15 +498,13 @@ class _TripCreationPageState extends State<TripCreationPage> {
           ),
           onTap: () => _selectDateRange(context),
           validator: (_) {
-            // Validate dates are selected
             if (_startDate == null || _endDate == null) {
               return 'Please select start and end dates';
             }
             return null;
           },
         ),
-        const SizedBox(height: 16), // Consistent spacing
-        // Description Field
+        const SizedBox(height: 16),
         TextFormField(
           controller: _descriptionController,
           decoration: InputDecoration(
@@ -574,31 +516,26 @@ class _TripCreationPageState extends State<TripCreationPage> {
             hintText: 'Add some details about your trip...',
           ),
           maxLines: 4,
-          // No validator needed as it's optional
         ),
-        const SizedBox(height: 16), // Consistent spacing
-        // Color Selection
+        const SizedBox(height: 16),
         const Text(
           'Choose a color for your trip:',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 16),
-        // Updated color picker layout for better alignment
         Wrap(
-          alignment: WrapAlignment.center, // Center align the color picker
-          spacing: 8, // Increased spacing for better visual appeal
-          runSpacing: 8, // Consistent spacing between rows
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
           children:
               _colorPalette.map((color) {
                 final isSelected = _selectedColor.value == color.value;
                 return Container(
-                  constraints: const BoxConstraints(
-                    maxWidth: 300,
-                  ), // Limit to 5 per row
+                  constraints: const BoxConstraints(maxWidth: 300),
                   child: GestureDetector(
                     onTap: () => setState(() => _selectedColor = color),
                     child: Container(
-                      width: 60, // Slightly larger for better visibility
+                      width: 60,
                       height: 60,
                       decoration: BoxDecoration(
                         color: color,
@@ -627,10 +564,7 @@ class _TripCreationPageState extends State<TripCreationPage> {
     );
   }
 
-  // Removed _buildDatesStep()
-
   Widget _buildParticipantsStep() {
-    // Ensure the list is scrollable if it gets long
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: TripParticipantsListFixed(
@@ -643,7 +577,6 @@ class _TripCreationPageState extends State<TripCreationPage> {
     );
   }
 
-  // Footer remains similar but Cancel button pops the page
   Widget _buildFooter() {
     return ButtonTray(
       padding: const EdgeInsets.all(16),
@@ -667,7 +600,6 @@ class _TripCreationPageState extends State<TripCreationPage> {
                 child: const Text('BACK'),
               )
               : TextButton(
-                // Updated onPressed for Cancel
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text('CANCEL'),
               ),
@@ -677,8 +609,7 @@ class _TripCreationPageState extends State<TripCreationPage> {
   String _getStepTitle() {
     switch (_currentStep) {
       case 0:
-        return 'Trip Details & Dates'; // Updated title
-      // case 1: // REMOVED
+        return 'Trip Details & Dates';
       case 1:
         return 'Invite Participants';
       default:
@@ -688,20 +619,15 @@ class _TripCreationPageState extends State<TripCreationPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Use Scaffold for the full page structure
     return GestureDetector(
-      onTap:
-          () =>
-              FocusScope.of(context).unfocus(), // Close keyboard on tap outside
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         appBar: AppBar(
           title: Text(_getStepTitle()),
           leading: IconButton(
             icon: const Icon(Icons.close),
-            // Use pop to close the page
             onPressed: () => Navigator.of(context).pop(),
           ),
-          // Optional: Add progress indicator to AppBar during final save
           bottom:
               _isLoading && _currentStep == _totalSteps - 1
                   ? const PreferredSize(
@@ -710,22 +636,18 @@ class _TripCreationPageState extends State<TripCreationPage> {
                   )
                   : null,
         ),
-        // Use Form widget to enable validation across steps
         body: Form(
           key: _formKey,
           child: SafeArea(
             child: Column(
-              mainAxisSize: MainAxisSize.max, // Ensure column takes full height
+              mainAxisSize: MainAxisSize.max,
               children: [
                 Expanded(
-                  // Make the step content take available space
                   child: Padding(
-                    // Add padding around the step content
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: _buildStepContent(),
                   ),
                 ),
-                // Place the footer at the bottom
                 _buildFooter(),
               ],
             ),

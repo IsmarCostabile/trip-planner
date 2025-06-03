@@ -43,22 +43,18 @@ class _DayVisitsListState extends State<DayVisitsList>
   @override
   void didUpdateWidget(DayVisitsList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Only reload visits if the tripDay ID changes - this prevents unnecessary reloading
     if (widget.tripDay.id != oldWidget.tripDay.id) {
       _loadVisitsFromService(initialLoad: true);
-      // Only clear expanded states if we're looking at a different day
       setState(() => _expandedStates.clear());
     }
   }
 
   void _loadVisitsFromService({bool initialLoad = false}) {
-    // Get visits from the TripDataService
     final tripDataService = Provider.of<TripDataService>(
       context,
       listen: false,
     );
 
-    // Only set state on initial load to avoid unnecessary rebuilds
     if (initialLoad && !_initialLoadComplete) {
       setState(() {
         _initialLoadComplete = true;
@@ -66,19 +62,15 @@ class _DayVisitsListState extends State<DayVisitsList>
     }
   }
 
-  // Create a stable key for travel time tiles that persists across day changes
   String _getTravelTileKey(
     String fromVisitId,
     String toVisitId,
     String fromName,
     String toName,
   ) {
-    // Use location names in the key to ensure stable references even if visit IDs change
-    // This allows us to reuse travel time tiles for the same locations
     return 'travel_${fromName}_to_${toName}_${fromVisitId}_${toVisitId}';
   }
 
-  // Get or create a travel time tile to avoid unnecessary rebuilds
   TravelTimeTile _getTravelTimeTile({
     required String fromVisitId,
     required String toVisitId,
@@ -88,7 +80,6 @@ class _DayVisitsListState extends State<DayVisitsList>
     required Location? destinationLocation,
     required DateTime destinationArrivalTime,
   }) {
-    // Find the origin visit to get its end time
     final tripDataService = Provider.of<TripDataService>(
       context,
       listen: false,
@@ -96,7 +87,6 @@ class _DayVisitsListState extends State<DayVisitsList>
     final visits = tripDataService.getVisitsForDay(widget.tripDay.id);
     final tripDay = tripDataService.findTripDayById(widget.tripDay.id);
 
-    // Find the origin visit by ID
     Visit? originVisit;
     for (final visit in visits) {
       if (visit.id == fromVisitId) {
@@ -105,13 +95,11 @@ class _DayVisitsListState extends State<DayVisitsList>
       }
     }
 
-    // Calculate the origin visit's end time
     DateTime? originVisitEndTime;
     if (originVisit != null && originVisit.visitDuration > 0) {
       originVisitEndTime = originVisit.visitEndTime;
     }
 
-    // Check if there's a saved travel mode preference
     String? preferredTravelMode;
     if (tripDay != null) {
       final travelSegment = tripDay.findTravelSegment(fromVisitId, toVisitId);
@@ -120,22 +108,18 @@ class _DayVisitsListState extends State<DayVisitsList>
       }
     }
 
-    // Generate a unique key that includes the trip ID and time information to ensure proper rebuilds
     final timeKey =
         '${destinationArrivalTime.millisecondsSinceEpoch}_${originVisitEndTime?.millisecondsSinceEpoch ?? 0}';
     final keyWithTripId =
         '${fromVisitId}_${toVisitId}_${widget.tripDay.tripId}_$timeKey';
     final tileKey = _getTravelTileKey(fromVisitId, toVisitId, fromName, toName);
 
-    // We'll force recreate the tile in certain conditions to ensure fresh data
     final shouldCreateNewTile =
         !_travelTimeTiles.containsKey(tileKey) ||
-        // Recreate if the trip changed or time info changed
         (_travelTimeTiles[tileKey]?.key as PageStorageKey?)?.value !=
             keyWithTripId;
 
     if (shouldCreateNewTile) {
-      // Create a new tile with updated key and data
       _travelTimeTiles[tileKey] = TravelTimeTile(
         key: PageStorageKey(keyWithTripId),
         originName: fromName,
@@ -144,14 +128,10 @@ class _DayVisitsListState extends State<DayVisitsList>
         destinationLocation: destinationLocation,
         tripId: widget.tripDay.tripId,
         destinationArrivalTime: destinationArrivalTime,
-        originVisitEndTime:
-            originVisitEndTime, // Pass the origin visit's end time
-        originVisitId:
-            fromVisitId, // Pass origin visit ID for stable travel preferences
-        destinationVisitId:
-            toVisitId, // Pass destination visit ID for stable travel preferences
-        travelMode:
-            preferredTravelMode, // Use the saved preference if available
+        originVisitEndTime: originVisitEndTime,
+        originVisitId: fromVisitId,
+        destinationVisitId: toVisitId,
+        travelMode: preferredTravelMode,
       );
     }
 
@@ -205,21 +185,16 @@ class _DayVisitsListState extends State<DayVisitsList>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required by AutomaticKeepAliveClientMixin
+    super.build(context);
 
     return Selector<TripDataService, List<Visit>>(
-      // Only rebuild when the list of visits for this specific day changes
       selector: (_, service) {
-        // Get visits and sort them by start time
         final visits = service.getVisitsForDay(widget.tripDay.id);
-        // Create a copy of the list to avoid modifying the original
         final sortedVisits = List<Visit>.from(visits);
-        // Sort by visit time (ascending)
         sortedVisits.sort((a, b) => a.visitTime.compareTo(b.visitTime));
         return sortedVisits;
       },
       shouldRebuild: (previous, next) {
-        // Check if the list actually changed to avoid unnecessary rebuilds
         if (previous.length != next.length) return true;
         for (int i = 0; i < previous.length; i++) {
           if (previous[i].id != next[i].id) return true;
@@ -234,7 +209,6 @@ class _DayVisitsListState extends State<DayVisitsList>
               label: 'Empty day visits list',
               hint: 'Pull to refresh',
               child: ListView(
-                // Use the TripDay's ID only for the key - more stable
                 key: PageStorageKey('visits_list_${widget.tripDay.id}'),
                 children: const [
                   SizedBox(height: 100),
@@ -258,10 +232,8 @@ class _DayVisitsListState extends State<DayVisitsList>
             child: ListView.builder(
               key: PageStorageKey('visits_list_${widget.tripDay.id}'),
               padding: const EdgeInsets.only(bottom: 80),
-              // Calculate total items: visits + travel times between visits
               itemCount: visits.length * 2 - 1,
               itemBuilder: (context, index) {
-                // If index is even, it's a visit
                 if (index % 2 == 0) {
                   final visitIndex = index ~/ 2;
                   final visit = visits[visitIndex];
@@ -279,10 +251,7 @@ class _DayVisitsListState extends State<DayVisitsList>
                       },
                     ),
                   );
-                }
-                // If index is odd, it's a travel time tile
-                else {
-                  // Calculate which visits this travel time is between
+                } else {
                   final fromVisitIndex = index ~/ 2;
                   final toVisitIndex = fromVisitIndex + 1;
 
@@ -293,7 +262,6 @@ class _DayVisitsListState extends State<DayVisitsList>
                       fromVisit.location?.name ?? 'Previous Location';
                   final toName = toVisit.location?.name ?? 'Next Location';
 
-                  // Get a cached travel time tile if it exists, or create a new one
                   final travelTile = _getTravelTimeTile(
                     fromVisitId: fromVisit.id,
                     toVisitId: toVisit.id,
@@ -301,49 +269,41 @@ class _DayVisitsListState extends State<DayVisitsList>
                     toName: toName,
                     originLocation: fromVisit.location,
                     destinationLocation: toVisit.location,
-                    destinationArrivalTime:
-                        toVisit
-                            .visitTime, // Pass the destination visit's time as arrival time
+                    destinationArrivalTime: toVisit.visitTime,
                   );
 
-                  // Create a row with connector line + travel tile
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Connector line with dot in the middle
                       Container(
                         width: 40,
-                        height: 50, // Reduced height from 80 to 50
+                        height: 50,
                         margin: const EdgeInsets.only(left: 16),
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Vertical line
                             Container(
                               width: 2,
-                              height: 50, // Reduced height to match parent
+                              height: 50,
                               color: Theme.of(
                                 context,
                               ).colorScheme.secondary.withOpacity(0.5),
                             ),
-                            // Center dot
                             Container(
-                              width: 8, // Reduced dot size from 10 to 8
-                              height: 8, // Reduced dot size from 10 to 8
+                              width: 8,
+                              height: 8,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Theme.of(context).colorScheme.secondary,
                                 border: Border.all(
                                   color: Theme.of(context).colorScheme.surface,
-                                  width:
-                                      1.5, // Reduced border width from 2 to 1.5
+                                  width: 1.5,
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      // Travel time tile - use the cached instance
                       Expanded(child: travelTile),
                     ],
                   );

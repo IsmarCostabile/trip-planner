@@ -4,13 +4,13 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:trip_planner/models/visit.dart';
 import 'package:trip_planner/services/places_service.dart';
 import 'package:trip_planner/services/polyline_service.dart';
-import 'package:trip_planner/services/directions_service.dart'; // Import DirectionsService
+import 'package:trip_planner/services/directions_service.dart';
 import 'package:trip_planner/widgets/empty_trip_placeholder.dart';
 import 'package:trip_planner/widgets/day_selector_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
 import 'package:trip_planner/services/user_data_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -23,49 +23,41 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
   GoogleMapController? _mapController;
   Set<Polyline> _polylines = {};
   bool _isFetchingPolylines = false;
-  String? _currentDayId; // To track changes in selected day
-  bool _useSimpleLines = false; // Add flag to track polyline display mode
+  String? _currentDayId;
+  bool _useSimpleLines = false;
 
-  // Add subscription for listening to travel mode changes
   StreamSubscription? _travelModeSubscription;
 
   late DirectionsService _directionsService;
-  TripDataService? _tripDataServiceInstance; // Store the instance
+  TripDataService? _tripDataServiceInstance;
 
-  // Add a property to track changes to the trip data
   bool _needsPolylineRefresh = false;
 
-  // Default initial position if no other location is available
   static const CameraPosition _initialPosition = CameraPosition(
-    target: LatLng(37.7749, -122.4194), // San Francisco
+    target: LatLng(37.7749, -122.4194),
     zoom: 1.0,
   );
 
   @override
-  bool get wantKeepAlive => true; // Keep state when switching tabs
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    // Initialize DirectionsService - ensure PlacesService is initialized beforehand
-    // Assuming PlacesService.apiKey is accessible statically after initialization in main.dart
     _directionsService = DirectionsService(apiKey: PlacesService.apiKey);
 
-    // Get the TripDataService instance here
     _tripDataServiceInstance = Provider.of<TripDataService>(
       context,
       listen: false,
     );
     _tripDataServiceInstance?.addListener(_onTripDataChanged);
 
-    // Set up listener for travel mode changes and load preferences
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUserPreferences();
       _setupTravelModeListener();
     });
   }
 
-  // Load user preference for map line display type
   void _loadUserPreferences() {
     final userDataService = Provider.of<UserDataService>(
       context,
@@ -80,33 +72,27 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
 
   @override
   void dispose() {
-    // Cancel travel mode change subscription
     _travelModeSubscription?.cancel();
 
-    // Remove listener using the stored instance
     _tripDataServiceInstance?.removeListener(_onTripDataChanged);
     _mapController?.dispose();
-    _directionsService.dispose(); // Dispose the http client
+    _directionsService.dispose();
     super.dispose();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Check if the selected day has changed and fetch polylines accordingly
     final tripDataService = Provider.of<TripDataService>(context);
     final selectedDay = tripDataService.selectedTripDay;
     if (selectedDay != null && selectedDay.id != _currentDayId) {
       _currentDayId = selectedDay.id;
-      // Use a post-frame callback to avoid calling setState during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          // Check if the widget is still mounted
           _fetchAndSetPolylines();
         }
       });
     } else if (selectedDay == null && _currentDayId != null) {
-      // Clear polylines if no day is selected anymore
       _currentDayId = null;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -119,7 +105,7 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
   }
 
   Future<void> _fetchAndSetPolylines() async {
-    if (!mounted) return; // Check if widget is still in the tree
+    if (!mounted) return;
 
     final tripDataService = Provider.of<TripDataService>(
       context,
@@ -136,19 +122,17 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
       return;
     }
 
-    // Get visits for the day and filter out those without coordinates
     final List<Visit> visits =
         tripDataService
             .getVisitsForDay(selectedDay.id)
             .where((v) => v.location?.coordinates != null)
             .toList();
 
-    // Sort visits by time, just like in the itinerary page
     visits.sort((a, b) => a.visitTime.compareTo(b.visitTime));
 
     if (visits.length < 2) {
       setState(() {
-        _polylines = {}; // Clear polylines if less than 2 visits
+        _polylines = {};
         _isFetchingPolylines = false;
       });
       return;
@@ -156,7 +140,7 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
 
     setState(() {
       _isFetchingPolylines = true;
-      _polylines = {}; // Clear existing polylines before fetching new ones
+      _polylines = {};
     });
 
     final List<Future<Polyline?>> polylineFutures = [];
@@ -165,7 +149,6 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
       final Visit originVisit = visits[i];
       final Visit destVisit = visits[i + 1];
 
-      // Ensure locations are not null
       if (originVisit.location == null || destVisit.location == null) continue;
 
       polylineFutures.add(
@@ -175,7 +158,7 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
 
     try {
       final List<Polyline?> results = await Future.wait(polylineFutures);
-      if (!mounted) return; // Check again after async gap
+      if (!mounted) return;
 
       final Set<Polyline> validPolylines =
           results.whereType<Polyline>().toSet();
@@ -185,18 +168,16 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
         _isFetchingPolylines = false;
       });
 
-      _updateCameraBounds(); // Update bounds after polylines are fetched
+      _updateCameraBounds();
     } catch (e) {
       if (!mounted) return;
       debugPrint("Error fetching polylines: $e");
       setState(() {
         _isFetchingPolylines = false;
-        // Optionally show an error message to the user
       });
     }
   }
 
-  // Helper to create a single polyline segment
   Future<Polyline?> _createPolylineSegment(
     Visit originVisit,
     Visit destVisit,
@@ -204,7 +185,6 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
     int index,
   ) async {
     try {
-      // Fetch preferred travel mode or default to driving/transit
       String? preferredMode = await _directionsService.getPreferredTravelMode(
         originVisit.location!,
         destVisit.location!,
@@ -216,7 +196,6 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
 
       List<LatLng> routePoints;
 
-      // Use simple straight lines if enabled, otherwise get complex route
       if (_useSimpleLines) {
         routePoints = PolylineService.createDirectPolyline(
           originVisit.location,
@@ -239,13 +218,13 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
           polylineId: PolylineId('route_$index'),
           points: routePoints,
           color: PolylineService.getTravelModeColor(travelMode),
-          width: 4, // Adjust width as needed
+          width: 4,
         );
       }
     } catch (e) {
       debugPrint("Error creating polyline segment $index: $e");
     }
-    return null; // Return null if fetching or creation fails
+    return null;
   }
 
   void _updateCameraBounds() {
@@ -259,20 +238,15 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
     if (selectedDay == null) return;
 
     final visits = tripDataService.getVisitsForDay(selectedDay.id);
-    final markers = _getMarkersForVisits(
-      visits,
-      null,
-      null,
-    ); // Get current markers
+    final markers = _getMarkersForVisits(visits, null, null);
 
-    if (markers.isEmpty && _polylines.isEmpty) return; // No points to bound
+    if (markers.isEmpty && _polylines.isEmpty) return;
 
     LatLngBounds bounds;
 
     if (_polylines.isNotEmpty) {
       bounds = PolylineService.getBoundsForPolylines(_polylines.toList());
 
-      // Manually include marker positions in bounds calculation
       double minLat = bounds.southwest.latitude;
       double minLng = bounds.southwest.longitude;
       double maxLat = bounds.northeast.latitude;
@@ -291,23 +265,19 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
         northeast: LatLng(maxLat, maxLng),
       );
     } else if (markers.isNotEmpty) {
-      // If only markers, bound them
       bounds = _boundsFromMarkers(markers);
     } else {
-      return; // Should not happen if check above works
+      return;
     }
 
-    // Add padding to the bounds
     final CameraUpdate cameraUpdate = CameraUpdate.newLatLngBounds(
       bounds,
       50.0,
-    ); // 50 pixels padding
+    );
 
-    // Animate camera smoothly
     _mapController!.animateCamera(cameraUpdate);
   }
 
-  // Helper to calculate bounds from markers only
   LatLngBounds _boundsFromMarkers(Set<Marker> markers) {
     if (markers.isEmpty)
       return LatLngBounds(
@@ -329,14 +299,12 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
     );
   }
 
-  // Helper function to generate markers (extracted for reuse)
   Set<Marker> _getMarkersForVisits(
     List<Visit> visits,
     double? focusLat,
     double? focusLng,
   ) {
     return visits.where((visit) => visit.location != null).map((visit) {
-      // Coordinates are guaranteed non-null here due to the 'where' clause above
       final coords = visit.location!.coordinates;
 
       final position = LatLng(coords.latitude, coords.longitude);
@@ -348,7 +316,7 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
             (focusLat == coords.latitude && focusLng == coords.longitude)
                 ? BitmapDescriptor.defaultMarkerWithHue(
                   BitmapDescriptor.hueOrange,
-                ) // Highlight focused marker
+                )
                 : BitmapDescriptor.defaultMarkerWithHue(
                   BitmapDescriptor.hueRed,
                 ),
@@ -356,15 +324,11 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
     }).toSet();
   }
 
-  // Called when TripDataService notifies listeners
   void _onTripDataChanged() {
     if (!mounted) return;
 
-    // Mark that we need to refresh polylines, but don't do it immediately
-    // This avoids refreshing too frequently if multiple changes happen in quick succession
     _needsPolylineRefresh = true;
 
-    // Refresh after a short delay to avoid multiple refreshes for batch changes
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted && _needsPolylineRefresh) {
         _needsPolylineRefresh = false;
@@ -373,7 +337,6 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  // Set up listener for real-time travel mode changes from Firestore
   void _setupTravelModeListener() {
     final tripDataService = Provider.of<TripDataService>(
       context,
@@ -386,16 +349,13 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
     final selectedDay = tripDataService.selectedTripDay;
     if (selectedDay == null) return;
 
-    // Listen to the tripDay document for travel segment changes
     _travelModeSubscription = FirebaseFirestore.instance
         .collection('tripDays')
         .where('tripId', isEqualTo: selectedTrip.id)
         .snapshots()
         .listen((snapshot) {
-          // Only refresh if the widget is still mounted
           if (!mounted) return;
 
-          // Check if this update includes our current day
           bool refreshNeeded = false;
           for (final doc in snapshot.docs) {
             if (doc.id == selectedDay.id) {
@@ -405,7 +365,6 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
           }
 
           if (refreshNeeded) {
-            // Mark for refresh and execute with a small delay
             _needsPolylineRefresh = true;
             Future.delayed(const Duration(milliseconds: 200), () {
               if (mounted && _needsPolylineRefresh) {
@@ -419,11 +378,10 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Ensure AutomaticKeepAliveClientMixin works
+    super.build(context);
 
     return Consumer<TripDataService>(
       builder: (context, tripDataService, child) {
-        // ... (existing loading and error handling) ...
         if (tripDataService.isLoading && tripDataService.selectedTrip == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Loading Map...')),
@@ -450,58 +408,48 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
           );
         }
         final tripDays = tripDataService.selectedTripDays;
-        // Handle case where trip exists but days haven't loaded yet (or are empty)
-        // We can still show the map centered on the destination or initial position
 
-        // Read navigation arguments for focus location (if any)
         final args =
             ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         final double? focusLat = args?['focusLat'] as double?;
         final double? focusLng = args?['focusLng'] as double?;
         final String? heroTag = args?['heroTag'] as String?;
 
-        // Get visits and markers for the selected day
         final selectedDay = tripDataService.selectedTripDay;
         final List<Visit> visits =
             selectedDay != null
                 ? tripDataService.getVisitsForDay(selectedDay.id)
                 : <Visit>[];
 
-        // Sort visits by time for consistent ordering with the itinerary page
         if (visits.isNotEmpty) {
           visits.sort((a, b) => a.visitTime.compareTo(b.visitTime));
         }
 
         final visitMarkers = _getMarkersForVisits(visits, focusLat, focusLng);
 
-        // Determine initial camera position logic (will be adjusted by _updateCameraBounds later)
         CameraPosition initialCameraPosition;
         if (focusLat != null && focusLng != null) {
           initialCameraPosition = CameraPosition(
             target: LatLng(focusLat, focusLng),
-            zoom: 15.0, // Zoom in on focused location initially
+            zoom: 15.0,
           );
         } else if (visitMarkers.isNotEmpty) {
-          // If markers exist, center on their bounds initially
           final bounds = _boundsFromMarkers(visitMarkers);
-          // Calculate center manually
           final centerLat =
               (bounds.southwest.latitude + bounds.northeast.latitude) / 2;
           final centerLng =
               (bounds.southwest.longitude + bounds.northeast.longitude) / 2;
           initialCameraPosition = CameraPosition(
             target: LatLng(centerLat, centerLng),
-            zoom: 10.0, // Start with a wider view
+            zoom: 10.0,
           );
         } else if (selectedTrip.destination?.coordinates != null) {
-          // Fallback to trip destination
           final coords = selectedTrip.destination!.coordinates;
           initialCameraPosition = CameraPosition(
             target: LatLng(coords.latitude, coords.longitude),
             zoom: 12.0,
           );
         } else {
-          // Absolute fallback
           initialCameraPosition = _initialPosition;
         }
 
@@ -514,11 +462,9 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
               if (newIndex != null &&
                   newIndex != tripDataService.selectedDayIndex) {
                 tripDataService.setSelectedDayIndex(newIndex);
-                // Fetching polylines is handled by didChangeDependencies
               }
             },
             actions: [
-              // Add toggle button for simple/complex routes
               IconButton(
                 icon: Icon(_useSimpleLines ? Icons.timeline : Icons.route),
                 tooltip:
@@ -529,7 +475,6 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
                   setState(() {
                     _useSimpleLines = !_useSimpleLines;
 
-                    // Save user preference to UserDataService
                     final userDataService = Provider.of<UserDataService>(
                       context,
                       listen: false,
@@ -541,7 +486,6 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
                       },
                     });
 
-                    // Refresh polylines when changing mode
                     _fetchAndSetPolylines();
                   });
                 },
@@ -549,9 +493,7 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
             ],
           ),
           body: Stack(
-            // Use Stack to overlay loading indicator
             children: [
-              // Wrap map view in Hero if tag exists
               heroTag != null
                   ? Hero(
                     tag: heroTag,
@@ -567,7 +509,6 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
                     _polylines,
                   ),
 
-              // Loading indicator overlay
               if (_isFetchingPolylines)
                 Positioned.fill(
                   child: Container(
@@ -582,7 +523,6 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
     );
   }
 
-  // Updated to accept polylines
   Widget _buildMapView(
     CameraPosition cameraPosition,
     Set<Marker> markers,
@@ -591,7 +531,7 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
     return GoogleMap(
       initialCameraPosition: cameraPosition,
       markers: markers,
-      polylines: polylines, // Add polylines here
+      polylines: polylines,
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
       mapToolbarEnabled: true,
@@ -600,12 +540,10 @@ class _MapPageState extends State<MapPage> with AutomaticKeepAliveClientMixin {
         if (!mounted) return;
         _mapController = controller;
 
-        // Initial camera animation after map creation
-        // Use a slight delay to ensure layout is complete
         Future.delayed(const Duration(milliseconds: 100), () {
-          if (!mounted) return; // Check mount status again after delay
+          if (!mounted) return;
           if (markers.isNotEmpty || polylines.isNotEmpty) {
-            _updateCameraBounds(); // Adjust bounds after map is created and polylines might be ready
+            _updateCameraBounds();
           } else {
             _mapController?.animateCamera(
               CameraUpdate.newCameraPosition(cameraPosition),

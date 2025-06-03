@@ -4,8 +4,6 @@ import 'package:trip_planner/services/places_service.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
 import 'package:trip_planner/widgets/day_visits_list.dart';
 import 'package:trip_planner/widgets/empty_trip_placeholder.dart';
-// Remove DaySelectorAppBar import if no longer needed directly
-// import 'package:trip_planner/widgets/day_selector_app_bar.dart';
 import 'package:trip_planner/widgets/modals/place_search_modal.dart';
 import 'package:trip_planner/widgets/modals/location_preview_modal.dart';
 import 'package:trip_planner/widgets/modals/add_visit_modal.dart';
@@ -14,9 +12,9 @@ import 'package:trip_planner/models/trip.dart';
 import 'package:trip_planner/models/trip_day.dart';
 import 'package:google_maps_webservice/places.dart';
 import 'package:trip_planner/widgets/base/base_modal.dart';
-import 'package:trip_planner/widgets/day_selector.dart'; // Import DaySelector
-import 'package:trip_planner/widgets/base/overlapping_avatars.dart'; // Import for avatars
-import 'package:trip_planner/widgets/highlighted_text.dart'; // Import for title
+import 'package:trip_planner/widgets/day_selector.dart';
+import 'package:trip_planner/widgets/base/overlapping_avatars.dart';
+import 'package:trip_planner/widgets/highlighted_text.dart';
 
 class ItineraryPage extends StatefulWidget {
   const ItineraryPage({super.key});
@@ -28,14 +26,10 @@ class ItineraryPage extends StatefulWidget {
 class _ItineraryPageState extends State<ItineraryPage>
     with AutomaticKeepAliveClientMixin {
   final PlacesService _placesService = PlacesService();
-  // PageController to manage swiping between days
   late PageController _pageController;
-  bool _isProgrammaticScroll = false; // Flag to prevent update loops
-  // Keep track of pages that have been viewed to optimize loading
+  bool _isProgrammaticScroll = false;
   final Set<String> _initializedPages = {};
-  // Cache for day content widgets to prevent rebuilding
   final Map<String, Widget> _pageCache = {};
-  // Add this to track the last time trip data was updated
   int _lastTripUpdateTimestamp = 0;
 
   @override
@@ -44,15 +38,8 @@ class _ItineraryPageState extends State<ItineraryPage>
   @override
   void initState() {
     super.initState();
-    // Initialize with keepAlive and viewportFraction for smoother scrolling
-    // Adding viewportFraction slightly less than 1.0 helps with performance
-    _pageController = PageController(
-      keepPage: true,
-      viewportFraction:
-          0.999, // Slight offset prevents some Flutter rendering issues
-    );
+    _pageController = PageController(keepPage: true, viewportFraction: 0.999);
 
-    // Initialize the controller with the current selected day index after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final tripDataService = Provider.of<TripDataService>(
         context,
@@ -61,9 +48,7 @@ class _ItineraryPageState extends State<ItineraryPage>
       if (!tripDataService.isLoading &&
           tripDataService.selectedTripDays.isNotEmpty &&
           _pageController.hasClients) {
-        // Jump directly without animation on initial load
         _pageController.jumpToPage(tripDataService.selectedDayIndex);
-        // Mark this page as initialized
         if (tripDataService.selectedTripDays.isNotEmpty) {
           _initializedPages.add(
             tripDataService
@@ -73,35 +58,25 @@ class _ItineraryPageState extends State<ItineraryPage>
         }
       }
 
-      // Add listener to tripDataService to detect changes
       tripDataService.addListener(_onTripDataChanged);
     });
   }
 
-  // Add this method to handle trip data changes
   void _onTripDataChanged() {
-    // Skip if widget is no longer mounted to avoid lifecycle exceptions
     if (!mounted) return;
 
-    // Get current timestamp
     final currentTimestamp = DateTime.now().millisecondsSinceEpoch;
 
-    // If this update is within 100ms of the last one, ignore it to prevent excessive rebuilds
     if (currentTimestamp - _lastTripUpdateTimestamp < 100) return;
 
-    // Mark the timestamp
     _lastTripUpdateTimestamp = currentTimestamp;
 
-    // Clear cache to force rebuild - only if still mounted
-    // Use a safe setState pattern to avoid lifecycle errors
     if (mounted) {
-      // Check if this context is still valid before calling setState
       try {
         setState(() {
           _pageCache.clear();
         });
       } catch (e) {
-        // Log error but don't crash if setState fails due to timing issues
         debugPrint('Error updating page cache: $e');
       }
     }
@@ -109,7 +84,6 @@ class _ItineraryPageState extends State<ItineraryPage>
 
   @override
   void dispose() {
-    // Safely remove listener when disposing
     try {
       final tripDataService = Provider.of<TripDataService>(
         context,
@@ -129,7 +103,7 @@ class _ItineraryPageState extends State<ItineraryPage>
   Widget build(BuildContext context) {
     super.build(context);
     final tripDataService = Provider.of<TripDataService>(context);
-    final theme = Theme.of(context); // Get theme
+    final theme = Theme.of(context);
 
     if (tripDataService.isLoading) {
       return Scaffold(
@@ -179,19 +153,15 @@ class _ItineraryPageState extends State<ItineraryPage>
           message: 'This trip has no planned days yet.',
           buttonText: 'Add your first day',
           icon: Icons.calendar_today,
-          // Using a simpler implementation for this case
-          // since we need to update the trip days rather than create a new trip
         ),
         floatingActionButton: _buildAddPlaceButton(tripDataService),
       );
     }
 
-    // Synchronize PageController when selectedDayIndex changes externally
     if (_pageController.hasClients) {
       final currentPage = _pageController.page?.round();
       final targetPage = tripDataService.selectedDayIndex;
       if (currentPage != targetPage) {
-        // Use a post frame callback to avoid triggering build during build
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && _pageController.hasClients && !_isProgrammaticScroll) {
             _isProgrammaticScroll = true;
@@ -215,30 +185,22 @@ class _ItineraryPageState extends State<ItineraryPage>
 
     return Scaffold(
       backgroundColor: Colors.white,
-      // Replace body with NestedScrollView
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return <Widget>[
             SliverAppBar(
-              // Configuration for hiding on scroll
-              floating:
-                  true, // Makes the app bar reappear as soon as you scroll up
-              snap:
-                  true, // Snaps the app bar into view when scrolling up slightly
-              pinned: false, // Does not stay visible when scrolled down
+              floating: true,
+              snap: true,
+              pinned: false,
               backgroundColor: Colors.white,
-              foregroundColor:
-                  Colors.black, // Adjust icon/text colors if needed
-              elevation: 1.0, // Optional: Add a slight shadow
-              // Calculate height based on title length
+              foregroundColor: Colors.black,
+              elevation: 1.0,
               toolbarHeight:
                   selectedTrip.name.length > 25
                       ? kToolbarHeight - 8.0
                       : selectedTrip.name.length > 15
                       ? kToolbarHeight - 4.0
                       : kToolbarHeight,
-
-              // Leading: Participant Avatars (extracted from TripHeaderBar logic)
               leading: Padding(
                 padding: EdgeInsets.only(
                   left: 16.0,
@@ -264,7 +226,6 @@ class _ItineraryPageState extends State<ItineraryPage>
                   onTap: () => _handleAvatarsTap(context, selectedTrip),
                 ),
               ),
-              // Title: Trip Name (extracted from TripHeaderBar logic with overflow handling)
               title: Padding(
                 padding: EdgeInsets.only(
                   top:
@@ -291,16 +252,11 @@ class _ItineraryPageState extends State<ItineraryPage>
                 ),
               ),
               centerTitle: true,
-              // Actions: Pass any actions if needed (assuming null for now)
-              actions: null, // Replace with actual actions if required
-              // Bottom: DaySelector (conditionally shown)
+              actions: null,
               bottom:
                   showDaySelector
                       ? PreferredSize(
-                        // Update height to match DaySelector's new height
-                        preferredSize: const Size.fromHeight(
-                          55.0 + 16.0,
-                        ), // _dayItemHeight + vertical padding
+                        preferredSize: const Size.fromHeight(55.0 + 16.0),
                         child: DaySelector(
                           trip: selectedTrip,
                           tripDays: tripDays,
@@ -312,13 +268,11 @@ class _ItineraryPageState extends State<ItineraryPage>
                           },
                         ),
                       )
-                      : null, // No bottom if day selector is hidden
+                      : null,
             ),
           ];
         },
-        // Body: The PageView
         body: Column(
-          // Keep the Column structure if needed, otherwise just the Expanded PageView
           children: [
             Expanded(
               child: Consumer<TripDataService>(
@@ -328,15 +282,11 @@ class _ItineraryPageState extends State<ItineraryPage>
                       service,
                       child,
                     ) => NotificationListener<ScrollNotification>(
-                      // Add a scroll listener to track scrolling state
                       onNotification: (notification) {
-                        // If scroll ends, clear cache to ensure fresh data
                         if (notification is ScrollEndNotification) {
-                          // Only rebuild if scrolling has actually changed the page
                           if (_pageController.page?.round() !=
                               tripDataService.selectedDayIndex) {
                             setState(() {
-                              // Clear just the cache of pages that aren't visible
                               final currentDayId =
                                   tripDays[_pageController.page!.round()].id;
                               _pageCache.removeWhere(
@@ -345,13 +295,12 @@ class _ItineraryPageState extends State<ItineraryPage>
                             });
                           }
                         }
-                        return false; // Return false for NestedScrollView compatibility
+                        return false;
                       },
                       child: Semantics(
                         container: true,
                         label: 'Day itinerary view',
-                        explicitChildNodes:
-                            true, // Explicitly handle child semantics
+                        explicitChildNodes: true,
                         onScrollLeft: () {
                           if (tripDataService.selectedDayIndex > 0) {
                             tripDataService.setSelectedDayIndex(
@@ -375,7 +324,6 @@ class _ItineraryPageState extends State<ItineraryPage>
                               if (_isProgrammaticScroll) return;
                               tripDataService.setSelectedDayIndex(newPage);
                             },
-                            // Ensure physics allows NestedScrollView to handle scroll
                             physics: const PageScrollPhysics(),
                             allowImplicitScrolling: false,
                             pageSnapping: true,
@@ -384,21 +332,17 @@ class _ItineraryPageState extends State<ItineraryPage>
                               final tripDay = tripDays[index];
                               final tripDayId = tripDay.id;
 
-                              // Check if we need to mark as initialized
                               if (!_initializedPages.contains(tripDayId)) {
                                 _initializedPages.add(tripDayId);
                               }
 
-                              // Check if we already have this page in cache
                               if (!_pageCache.containsKey(tripDayId)) {
-                                // Create a new cached widget for this day
                                 _pageCache[tripDayId] = _buildDayPage(
                                   tripDay,
                                   selectedTrip,
                                 );
                               }
 
-                              // Use cached page for better performance
                               return _pageCache[tripDayId]!;
                             },
                           ),
@@ -414,21 +358,17 @@ class _ItineraryPageState extends State<ItineraryPage>
     );
   }
 
-  // Create a separate method to build day pages to make caching more explicit
   Widget _buildDayPage(TripDay tripDay, Trip selectedTrip) {
-    // Safety check for context
     if (!mounted) {
-      return const SizedBox.shrink(); // Return empty widget if context is invalid
+      return const SizedBox.shrink();
     }
 
-    // Get key that incorporates both tripDay.id and a content hash based on visits
     final tripDataService = Provider.of<TripDataService>(
       context,
       listen: false,
     );
     final visits = tripDataService.getVisitsForDay(tripDay.id);
 
-    // Build visit hash for cache invalidation
     final visitsHash = visits.fold(
       '',
       (prev, visit) =>
@@ -437,14 +377,11 @@ class _ItineraryPageState extends State<ItineraryPage>
 
     return RepaintBoundary(
       child: KeepAlivePage(
-        key: ValueKey(
-          'keep_alive_${tripDay.id}_$visitsHash',
-        ), // Add a key that changes when visits change
+        key: ValueKey('keep_alive_${tripDay.id}_$visitsHash'),
         child: DayVisitsList(
           key: ValueKey('day_list_${tripDay.id}_$visitsHash'),
           tripDay: tripDay,
           onRefresh: () async {
-            // Force map refresh instead of calling loadTripDays which is now handled by streams
             final tripDataService = Provider.of<TripDataService>(
               context,
               listen: false,
@@ -466,13 +403,10 @@ class _ItineraryPageState extends State<ItineraryPage>
           width: 2.0,
         ),
       ),
-      backgroundColor: Colors.white, // Set the inside of the button to white
-      elevation: 0, // Remove shadow to prevent darkening
+      backgroundColor: Colors.white,
+      elevation: 0,
       tooltip: 'Add Place to Itinerary',
-      child: Icon(
-        Icons.add,
-        color: Theme.of(context).colorScheme.primary,
-      ), // Adjust icon color for contrast
+      child: Icon(Icons.add, color: Theme.of(context).colorScheme.primary),
     );
   }
 
@@ -497,7 +431,6 @@ class _ItineraryPageState extends State<ItineraryPage>
           listen: false,
         ).selectedDayIndex];
 
-    // Show the search modal and wait for a result
     final result = await showAppModal<Map<String, dynamic>>(
       context: context,
       builder:
@@ -515,7 +448,6 @@ class _ItineraryPageState extends State<ItineraryPage>
           ),
     );
 
-    // Handle the result based on the action requested
     if (result != null && mounted) {
       if (result['action'] == 'showLocationPreview') {
         _showLocationPreviewModal(
@@ -536,7 +468,6 @@ class _ItineraryPageState extends State<ItineraryPage>
   ) async {
     if (!mounted) return;
 
-    // Get the TripDataService instance *before* the async gap of showAppModal
     final tripDataService = Provider.of<TripDataService>(
       context,
       listen: false,
@@ -546,14 +477,11 @@ class _ItineraryPageState extends State<ItineraryPage>
       context: context,
       builder:
           (modalContext) => ChangeNotifierProvider.value(
-            // Changed from Provider.value
-            value: tripDataService, // Use the instance fetched before the await
+            value: tripDataService,
             child: LocationPreviewModal(
               placeDetails: details,
               trip: trip,
               onLocationSaved: (updatedTrip) {
-                // Use the provided service instance directly if needed, or re-fetch
-                // Using the instance passed via .value is generally safe here
                 tripDataService.updateTrip(updatedTrip);
               },
               selectedTripDay: selectedTripDay,
@@ -561,9 +489,7 @@ class _ItineraryPageState extends State<ItineraryPage>
           ),
     );
 
-    // Handle the result if needed
     if (result != null && mounted && result['action'] == 'showAddVisitModal') {
-      // Ensure selectedTrip is not null before proceeding
       final currentSelectedTrip =
           Provider.of<TripDataService>(context, listen: false).selectedTrip;
       if (currentSelectedTrip != null) {
@@ -573,14 +499,12 @@ class _ItineraryPageState extends State<ItineraryPage>
           result['tripDay'],
         );
       } else {
-        // Handle error: selected trip is null
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error: No selected trip found.')),
         );
       }
     }
 
-    // Clear cache when modal is closed to ensure fresh data
     if (mounted) {
       setState(() {
         _pageCache.clear();
@@ -595,7 +519,6 @@ class _ItineraryPageState extends State<ItineraryPage>
   ) async {
     if (!mounted) return;
 
-    // Get the TripDataService instance *before* the async gap of showAppModal
     final tripDataService = Provider.of<TripDataService>(
       context,
       listen: false,
@@ -605,40 +528,31 @@ class _ItineraryPageState extends State<ItineraryPage>
       context: context,
       builder:
           (modalContext) => ChangeNotifierProvider.value(
-            // Changed from Provider.value
-            value: tripDataService, // Use the instance fetched before the await
+            value: tripDataService,
             child: AddVisitModal(place: place, trip: trip, tripDay: tripDay),
           ),
     );
 
-    // Refresh data after closing the modal
     if (mounted) {
-      // Clear cache to ensure fresh data is shown
       setState(() {
         _pageCache.clear();
       });
 
-      // Force map refresh instead of calling loadTripDays
       tripDataService.forceMapRefresh();
     }
   }
 
-  // Method to show the participants management modal
   Future<void> _showParticipantsModal(BuildContext context, Trip trip) async {
     if (!mounted) return;
 
     await showParticipantsListModal(context: context, trip: trip);
-
-    // No need to manually refresh as TripDataService will update the UI
   }
 
-  // Method to handle tapping on the overlapping avatars
   void _handleAvatarsTap(BuildContext context, Trip trip) {
     showParticipantsListModal(context: context, trip: trip);
   }
 }
 
-// Helper widget to ensure pages stay alive in the PageView
 class KeepAlivePage extends StatefulWidget {
   final Widget child;
 

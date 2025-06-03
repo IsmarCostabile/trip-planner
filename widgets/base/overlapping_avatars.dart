@@ -2,27 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:trip_planner/models/trip_participant.dart';
 import 'package:trip_planner/widgets/base/profile_picture.dart';
 
-/// A widget that displays overlapping profile avatars with a +X indicator
 class OverlappingAvatars extends StatelessWidget {
-  /// The list of participants to display
   final List<TripParticipant> participants;
-
-  /// Maximum number of avatars to show before using +X indicator
   final int maxVisibleAvatars;
-
-  /// Size of each avatar
   final double avatarSize;
-
-  /// How much each avatar should overlap the previous one (in pixels)
   final double overlap;
-
-  /// Background color for the +X indicator and default avatar color
   final Color? backgroundColor;
-
-  /// Whether to show a clickable style with hover effect
   final bool clickable;
-
-  /// Callback for when the avatars are tapped
   final VoidCallback? onTap;
 
   const OverlappingAvatars({
@@ -40,38 +26,31 @@ class OverlappingAvatars extends StatelessWidget {
   Widget build(BuildContext context) {
     final defaultBackgroundColor = backgroundColor ?? Colors.grey.shade400;
     const double borderWidth = 2.0;
-    // If no participants, return empty container
     if (participants.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // Calculate total width based on visible avatars and overlap
     final int visibleCount =
         participants.length > maxVisibleAvatars
-            ? maxVisibleAvatars +
-                1 // +1 for the +X avatar
+            ? maxVisibleAvatars + 1
             : participants.length;
-    // Add borderWidth * 2 for both sides, plus extra padding to prevent clipping
     final double totalWidth =
         avatarSize +
         (visibleCount - 1) * (avatarSize - overlap) +
         borderWidth * 2 +
         8;
-    // Add extra height to prevent bottom clipping
     final double totalHeight = avatarSize + borderWidth * 2 + 8;
 
-    // Create the base widget
     Widget avatarStack = Stack(
       alignment: Alignment.topLeft,
-      clipBehavior: Clip.none, // Don't clip children
+      clipBehavior: Clip.none,
       children: _buildAvatarStack(defaultBackgroundColor, context, borderWidth),
     );
 
-    // Add clickable styling if needed
     if (clickable || onTap != null) {
       avatarStack = InkWell(
         onTap: onTap,
-        customBorder: CircleBorder(),
+        customBorder: const CircleBorder(),
         child: MouseRegion(
           cursor: SystemMouseCursors.click,
           child: Semantics(
@@ -88,7 +67,6 @@ class OverlappingAvatars extends StatelessWidget {
       );
     }
 
-    // Use a container with margin to prevent clipping
     return Container(
       margin: const EdgeInsets.all(2.0),
       width: totalWidth,
@@ -109,7 +87,6 @@ class OverlappingAvatars extends StatelessWidget {
             ? maxVisibleAvatars
             : actualParticipants;
 
-    // Add visible participant avatars
     for (int i = 0; i < visibleParticipants; i++) {
       final participant = participants[i];
       avatarWidgets.add(
@@ -134,7 +111,6 @@ class OverlappingAvatars extends StatelessWidget {
       );
     }
 
-    // Add +X indicator if there are more participants than shown
     if (actualParticipants > maxVisibleAvatars) {
       final remaining = actualParticipants - maxVisibleAvatars;
       avatarWidgets.add(
@@ -168,17 +144,13 @@ class OverlappingAvatars extends StatelessWidget {
     return avatarWidgets;
   }
 
-  // Helper method to get the correct photo URL from participant
   String? _getParticipantPhotoUrl(TripParticipant participant) {
-    // First try photoUrl (lowercase)
     if (participant.photoUrl != null && participant.photoUrl!.isNotEmpty) {
       return participant.photoUrl;
     }
 
-    // Check if there's additional data in extraInfo map
     if (participant is Map<String, dynamic>) {
       final Map<String, dynamic> map = participant as Map<String, dynamic>;
-      // Try common keys for Firebase Storage URLs
       if (map['photoURL'] != null && map['photoURL'].toString().isNotEmpty) {
         return map['photoURL'];
       }
@@ -188,7 +160,6 @@ class OverlappingAvatars extends StatelessWidget {
       }
     }
 
-    // No valid URL found
     return null;
   }
 }

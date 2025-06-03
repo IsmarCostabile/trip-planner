@@ -8,13 +8,11 @@ class PlacesService {
   static String get apiKey => _apiKey;
   final places = GoogleMapsPlaces(apiKey: _apiKey);
 
-  // Get the current locale's language code
   String _getCurrentLanguage(BuildContext? context) {
     if (context != null) {
       final locale = Localizations.localeOf(context);
       return locale.languageCode;
     }
-    // Fall back to system locale if context is not available
     return WidgetsBinding.instance.platformDispatcher.locale.languageCode;
   }
 
@@ -58,19 +56,14 @@ class PlacesService {
         'Fetching predictions for query: $query${location != null ? ' near ${location.lat},${location.lng}' : ''}',
       );
 
-      // Create autocomplete request with location bias if available
       final response = await places.autocomplete(
         query,
         language: _getCurrentLanguage(context),
-        components: [], // No country restrictions to allow worldwide results
-        location: location, // Optional location bias
-        radius: null, // Remove radius restriction to get worldwide results
-        types: [
-          'locality',
-          'country',
-          'administrative_area_level_1',
-        ], // Using proper place types for cities, countries, and regions
-        strictbounds: false, // Allow results from anywhere in the world
+        components: [],
+        location: location,
+        radius: null,
+        types: ['locality', 'country', 'administrative_area_level_1'],
+        strictbounds: false,
       );
 
       debugPrint('Places API Response Status: ${response.status}');
@@ -134,7 +127,6 @@ class PlacesService {
 
       debugPrint('Searching places for query: $query');
 
-      // Use textSearch to find places matching the query
       final response = await places.searchByText(
         query,
         language: _getCurrentLanguage(context),
@@ -157,7 +149,6 @@ class PlacesService {
     }
   }
 
-  // Search for places near a specific location with an optional text query
   Future<List<PlacesSearchResult>> searchPlacesNearby(
     String query,
     GeoPoint location, {
@@ -195,7 +186,6 @@ class PlacesService {
     }
   }
 
-  // Helper method to generate photo URLs from photo references
   String getPhotoUrl(String photoReference, {int maxWidth = 400}) {
     return 'https://maps.googleapis.com/maps/api/place/photo?maxwidth=$maxWidth&photo_reference=$photoReference&key=$_apiKey';
   }
@@ -214,18 +204,14 @@ class PlacesService {
         'Fetching place predictions for query: $query${location != null ? ' near ${location.lat},${location.lng}' : ''}',
       );
 
-      // Create autocomplete request with location bias and place types
       final response = await places.autocomplete(
         query,
         language: _getCurrentLanguage(context),
-        components: [], // No country restrictions for worldwide results
-        location: location, // Bias results toward trip destination
-        radius:
-            radius, // Use provided radius (typically 50km around destination)
-        types: placeTypes ?? ['establishment'], // Filter by place types
-        strictbounds:
-            location !=
-            null, // Use strict bounds only when location is provided
+        components: [],
+        location: location,
+        radius: radius,
+        types: placeTypes ?? ['establishment'],
+        strictbounds: location != null,
       );
 
       debugPrint('Places API Response Status: ${response.status}');

@@ -13,13 +13,12 @@ import 'package:trip_planner/widgets/modals/add_visit_modal.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
-import 'package:provider/provider.dart'; // Added missing Provider import
+import 'package:provider/provider.dart';
 import 'dart:async';
 
 class PlaceSearchModal extends StatefulWidget {
   final PlacesService placesService;
-  final Function(Location)
-  onPlaceSelected; // Changed from PlacesSearchResult to Location
+  final Function(Location) onPlaceSelected;
   final Trip trip;
   final Function(Trip) onTripUpdated;
   final TripDay? selectedTripDay;
@@ -63,7 +62,7 @@ class _PlaceSearchModalState extends State<PlaceSearchModal> {
   List<Prediction> _predictions = [];
   bool _isSearching = false;
   bool _loadingTripDays = false;
-  bool _isLoading = false; // Add the missing _isLoading variable
+  bool _isLoading = false;
   List<TripDay> _tripDays = [];
   Timer? _debounce;
   bool _isAddingToDay = false;
@@ -85,10 +84,6 @@ class _PlaceSearchModalState extends State<PlaceSearchModal> {
   Future<void> _loadTripDays() async {
     if (widget.trip.id.isEmpty) return;
 
-    // No need to manually load trip days since we're using streams now
-    // The TripDataService will automatically provide updated trip days data
-
-    // Just get the current trip days from the service
     final tripDataService = Provider.of<TripDataService>(
       context,
       listen: false,
@@ -114,7 +109,6 @@ class _PlaceSearchModalState extends State<PlaceSearchModal> {
     });
 
     try {
-      // Always use the destination location for biasing results
       gmw_places.Location? locationBias;
       if (widget.trip.destination != null) {
         locationBias = gmw_places.Location(
@@ -123,7 +117,6 @@ class _PlaceSearchModalState extends State<PlaceSearchModal> {
         );
       }
 
-      // First try to get place predictions near the trip destination
       final predictions = await widget.placesService.getPlacePredictions(
         query,
         location: locationBias,
@@ -164,7 +157,6 @@ class _PlaceSearchModalState extends State<PlaceSearchModal> {
 
       setState(() => _isSearching = false);
       if (details != null) {
-        // Close this modal and return the details
         Navigator.of(
           context,
         ).pop({'action': 'showLocationPreview', 'details': details});
@@ -198,7 +190,6 @@ class _PlaceSearchModalState extends State<PlaceSearchModal> {
         return;
       }
 
-      // Use the selectedTripDay if provided, otherwise fall back to first trip day
       final tripDay =
           widget.selectedTripDay ??
           (_tripDays.isNotEmpty ? _tripDays.first : null);
@@ -210,7 +201,6 @@ class _PlaceSearchModalState extends State<PlaceSearchModal> {
         return;
       }
 
-      // Create a Search Result
       final place = gmw_places.PlacesSearchResult(
         name: name,
         formattedAddress: address ?? '',
@@ -225,7 +215,6 @@ class _PlaceSearchModalState extends State<PlaceSearchModal> {
         reference: '',
       );
 
-      // Close this modal and return the data needed for AddVisitModal
       Navigator.of(context).pop({
         'action': 'showAddVisitModal',
         'place': place,
@@ -246,7 +235,6 @@ class _PlaceSearchModalState extends State<PlaceSearchModal> {
   void _addVisitToDay(TripDay day, PlacesSearchResult place) {
     Navigator.pop(context); // Close search modal first
 
-    // We need to ensure we're using the correct types with the new prefixed imports
     AddVisitModal.show(
       context: context,
       place: gmw_places.PlacesSearchResult(

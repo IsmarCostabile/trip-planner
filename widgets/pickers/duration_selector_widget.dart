@@ -5,7 +5,6 @@ import 'dart:math'; // Import for min function
 class DurationSelectorWidget extends StatefulWidget {
   final int initialDurationMinutes;
   final ValueChanged<int> onDurationChanged;
-  // minuteInterval is no longer used directly by the picker but kept for consistency if needed elsewhere
   final int minuteInterval;
 
   const DurationSelectorWidget({
@@ -20,7 +19,6 @@ class DurationSelectorWidget extends StatefulWidget {
 }
 
 class _DurationSelectorWidgetState extends State<DurationSelectorWidget> {
-  // Define the duration steps and their display strings
   final List<Map<String, dynamic>> _durationOptions = [
     {'minutes': 5, 'label': '5 min'},
     {'minutes': 10, 'label': '10 min'},
@@ -48,7 +46,6 @@ class _DurationSelectorWidgetState extends State<DurationSelectorWidget> {
     _selectedIndex = _findNearestIndex(widget.initialDurationMinutes);
   }
 
-  // Helper function to find the index of the duration closest to the initial value
   int _findNearestIndex(int initialMinutes) {
     int closestIndex = 0;
     int minDifference =
@@ -60,14 +57,8 @@ class _DurationSelectorWidgetState extends State<DurationSelectorWidget> {
       if (difference < minDifference) {
         minDifference = difference;
         closestIndex = i;
-      } else if (difference == minDifference) {
-        // Optional: If exactly between two, prefer the lower index (shorter duration)
-        // Or adjust logic as needed. Current logic keeps the first one found.
-      }
+      } else if (difference == minDifference) {}
     }
-    // If the initial value is exactly between two options, prefer the lower one or adjust as needed.
-    // Or if it's smaller than the first option, select the first.
-    // Or if it's larger than the last, select the last.
     if (initialMinutes < (_durationOptions.first['minutes'] as int)) return 0;
     if (initialMinutes > (_durationOptions.last['minutes'] as int))
       return _durationOptions.length - 1;
@@ -90,9 +81,8 @@ class _DurationSelectorWidgetState extends State<DurationSelectorWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Use a fixed height container for the scrollable row
     return Container(
-      height: 40, // Adjust height as needed for buttons
+      height: 40,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -112,8 +102,6 @@ class _DurationSelectorWidgetState extends State<DurationSelectorWidget> {
                       side: BorderSide(
                         color: isSelected ? Colors.green : Colors.black,
                       ),
-                      // Minimum size can be adjusted if needed
-                      // minimumSize: Size(80, 36),
                     ),
                     onPressed: () {
                       setState(() {

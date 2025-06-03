@@ -219,13 +219,9 @@ class _EditVisitTimeModalState extends State<EditVisitTimeModal> {
   }
 
   void _saveChanges() {
-    // First call the onSave callback with the new time values
     widget.onSave(_selectedStartTime, _selectedEndTime);
 
-    // Wait for the next frame before notifying listeners
-    // Use safer pattern with mounted check to avoid lifecycle issues
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Double-check mounted state to avoid accessing a defunct widget
       if (!mounted) return;
 
       try {
@@ -234,9 +230,7 @@ class _EditVisitTimeModalState extends State<EditVisitTimeModal> {
           listen: false,
         );
 
-        // Notify listeners through the safe method
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          // The service itself should check for disposed listeners
           tripDataService.notifyListeners();
         });
       } catch (e) {

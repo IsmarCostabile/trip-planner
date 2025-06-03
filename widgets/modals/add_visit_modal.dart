@@ -9,7 +9,6 @@ import 'package:uuid/uuid.dart';
 import 'package:trip_planner/widgets/base/base_modal.dart';
 import 'package:trip_planner/widgets/pickers/time_picker_widget.dart';
 import 'package:trip_planner/widgets/pickers/duration_selector_widget.dart';
-// Add missing imports for Provider and TripDataService
 import 'package:provider/provider.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
 import 'package:trip_planner/widgets/modals/button_tray.dart';
@@ -26,14 +25,12 @@ class AddVisitModal extends StatefulWidget {
     required this.tripDay,
   });
 
-  /// Helper method to show the modal with consistent styling
   static Future<void> show({
     required BuildContext context,
     required PlacesSearchResult place,
     required Trip trip,
     required TripDay tripDay,
   }) {
-    // Get the TripDataService before showing modal
     final tripDataService = Provider.of<TripDataService>(
       context,
       listen: false,
@@ -43,8 +40,6 @@ class AddVisitModal extends StatefulWidget {
       context: context,
       builder:
           (modalContext) => ChangeNotifierProvider.value(
-            // Changed from Provider.value
-            // Provide the same instance but in an isolated context
             value: tripDataService,
             child: AddVisitModal(place: place, trip: trip, tripDay: tripDay),
           ),
@@ -58,21 +53,20 @@ class AddVisitModal extends StatefulWidget {
 class _AddVisitModalState extends State<AddVisitModal> {
   bool _isSaving = false;
 
-  late TimeOfDay _selectedTime; // Make it late
-  int _selectedDuration = 5; // Default duration in minutes
+  late TimeOfDay _selectedTime;
+  int _selectedDuration = 5;
 
   final uuid = Uuid();
 
-  final int _minuteInterval = 5; // Define interval for reuse
+  final int _minuteInterval = 5;
 
   @override
   void initState() {
     super.initState();
-    // Adjust initial time to be a multiple of the interval
     final now = TimeOfDay.now();
     _selectedTime = TimeOfDay(
       hour: now.hour,
-      minute: (now.minute ~/ _minuteInterval) * _minuteInterval, // Round down
+      minute: (now.minute ~/ _minuteInterval) * _minuteInterval,
     );
   }
 
@@ -84,7 +78,6 @@ class _AddVisitModalState extends State<AddVisitModal> {
   Future<Visit> _createVisit(DateTime visitDateTime) async {
     final visitId = uuid.v4();
 
-    // Create a Location object from place details
     final location = Location(
       id: widget.place.placeId,
       name: widget.place.name,
@@ -119,14 +112,12 @@ class _AddVisitModalState extends State<AddVisitModal> {
 
       final newVisit = await _createVisit(visitDateTime);
 
-      // Use Provider to save the visit
       final tripDataService = Provider.of<TripDataService>(
         context,
         listen: false,
       );
       await tripDataService.addVisit(widget.tripDay.id, newVisit);
 
-      // Pop and return success without rebuilding everything
       Navigator.of(context).pop({'result': 'success', 'visit': newVisit});
     } catch (e) {
       ScaffoldMessenger.of(
@@ -140,14 +131,12 @@ class _AddVisitModalState extends State<AddVisitModal> {
   }
 
   Widget _buildContent() {
-    // Replace ListView with Column as BaseModal will handle scrolling
     return Column(
-      mainAxisSize:
-          MainAxisSize.min, // Prevent Column from expanding unnecessarily
-      crossAxisAlignment: CrossAxisAlignment.start, // Align text to the left
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0), // Add padding
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
             'Select Time:',
             style: Theme.of(context).textTheme.titleMedium,
@@ -155,8 +144,7 @@ class _AddVisitModalState extends State<AddVisitModal> {
         ),
         const SizedBox(height: 8),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0), // Add padding
-          // Use the new TimePickerWidget
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: TimePickerWidget(
             initialTime: _selectedTime,
             minuteInterval: _minuteInterval,
@@ -169,7 +157,7 @@ class _AddVisitModalState extends State<AddVisitModal> {
         ),
         const SizedBox(height: 24),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0), // Add padding
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
             'Select Duration (minutes):',
             style: Theme.of(context).textTheme.titleMedium,
@@ -177,8 +165,7 @@ class _AddVisitModalState extends State<AddVisitModal> {
         ),
         const SizedBox(height: 8),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0), // Add padding
-          // Use the new DurationSelectorWidget
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: DurationSelectorWidget(
             initialDurationMinutes: _selectedDuration,
             onDurationChanged: (value) {
@@ -188,7 +175,7 @@ class _AddVisitModalState extends State<AddVisitModal> {
             },
           ),
         ),
-        const SizedBox(height: 16), // Add some padding at the bottom
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -230,11 +217,9 @@ class _AddVisitModalState extends State<AddVisitModal> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: BaseModal(
         title: 'Add Visit to ${widget.place.name}',
-        // Remove isScrollable: false to use default scrollable behavior
-        // Adjust sizes to better fit the content
-        initialChildSize: 0.5, // Slightly larger to accommodate padding/content
+        initialChildSize: 0.5,
         minChildSize: 0.4,
-        maxChildSize: 0.7, // Allow slightly more expansion if needed
+        maxChildSize: 0.7,
         footer: _buildFooter(),
         child: _buildContent(),
       ),

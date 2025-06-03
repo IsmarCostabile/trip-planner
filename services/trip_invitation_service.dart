@@ -9,7 +9,6 @@ class TripInvitationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Get all invitations for the current user (sent to them)
   Future<List<TripInvitation>> getInvitationsForUser({
     InvitationStatus? status,
   }) async {
@@ -21,7 +20,6 @@ class TripInvitationService {
           .collection('tripInvitations')
           .where('inviteeId', isEqualTo: user.uid);
 
-      // Add status filter if provided
       if (status != null) {
         query = query.where(
           'status',
@@ -40,7 +38,6 @@ class TripInvitationService {
     }
   }
 
-  // Get invitations sent by the current user
   Future<List<TripInvitation>> getInvitationsSentByUser({
     InvitationStatus? status,
   }) async {
@@ -52,7 +49,6 @@ class TripInvitationService {
           .collection('tripInvitations')
           .where('inviterId', isEqualTo: user.uid);
 
-      // Add status filter if provided
       if (status != null) {
         query = query.where(
           'status',
@@ -71,17 +67,14 @@ class TripInvitationService {
     }
   }
 
-  // Get pending invitations for the current user
   Future<List<TripInvitation>> getPendingInvitations() async {
     return getInvitationsForUser(status: InvitationStatus.pending);
   }
 
-  // Get trips with pending invitations (for backward compatibility)
   Future<List<Trip>> getTripsWithPendingInvitations() async {
     final pendingInvitations = await getPendingInvitations();
     if (pendingInvitations.isEmpty) return [];
 
-    // Get trip IDs from invitations
     final tripIds =
         pendingInvitations.map((inv) => inv.tripId).toSet().toList();
 
@@ -100,7 +93,6 @@ class TripInvitationService {
     }
   }
 
-  // Create a new trip invitation
   Future<bool> createInvitation({
     required String tripId,
     required String tripName,
@@ -112,7 +104,6 @@ class TripInvitationService {
     if (user == null) return false;
 
     try {
-      // Check if an invitation already exists for this user and trip
       final existingInvitations =
           await _firestore
               .collection('tripInvitations')
@@ -124,14 +115,12 @@ class TripInvitationService {
               )
               .get();
 
-      // If an invitation already exists, don't create a new one
       if (existingInvitations.docs.isNotEmpty) {
         return false;
       }
 
-      // Create a new invitation document
       final invitation = TripInvitation(
-        id: '', // Will be assigned by Firestore
+        id: '',
         tripId: tripId,
         tripName: tripName,
         inviterId: user.uid,
@@ -151,7 +140,6 @@ class TripInvitationService {
     }
   }
 
-  // Update an invitation status
   Future<bool> updateInvitationStatus(
     String invitationId,
     InvitationStatus status,
@@ -167,7 +155,6 @@ class TripInvitationService {
     }
   }
 
-  // Get a specific invitation by ID
   Future<TripInvitation?> getInvitationById(String invitationId) async {
     try {
       final doc =
@@ -185,19 +172,16 @@ class TripInvitationService {
     }
   }
 
-  // Check if the user has any pending invitations
   Future<bool> hasAnyPendingInvitations() async {
     final pendingInvitations = await getPendingInvitations();
     return pendingInvitations.isNotEmpty;
   }
 
-  // Get the first pending invitation (for showing immediately after login)
   Future<Trip?> getFirstPendingInvitation() async {
     final pendingInvitations = await getPendingInvitations();
     if (pendingInvitations.isEmpty) return null;
 
     try {
-      // Get the trip for the first pending invitation
       final tripDoc =
           await _firestore
               .collection('trips')
@@ -214,7 +198,6 @@ class TripInvitationService {
     }
   }
 
-  // Delete an invitation by ID
   Future<bool> deleteInvitation(String invitationId) async {
     try {
       await _firestore.collection('tripInvitations').doc(invitationId).delete();

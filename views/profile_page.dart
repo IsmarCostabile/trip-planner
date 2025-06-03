@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:trip_planner/models/trip.dart'; // This has InvitationStatus enum
+import 'package:trip_planner/models/trip.dart';
 import 'package:trip_planner/models/trip_invitation.dart';
 import 'package:trip_planner/views/trip_invitation_page.dart';
 import 'package:trip_planner/services/trip_invitation_service.dart';
@@ -32,7 +32,6 @@ class _ProfilePageState extends State<ProfilePage> {
   final user = FirebaseAuth.instance.currentUser;
   String _distanceUnit = 'km';
   String _timeFormat = '24h';
-  // Removed _dateFormat state variable
   String? _photoUrl;
   final ImagePicker _imagePicker = ImagePicker();
   List<Trip> _userTrips = [];
@@ -43,10 +42,8 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    // Load saved selected trip ID immediately
     _selectedTripId = Hive.box('userBox').get('selectedTripId') as String?;
     _loadProfile();
-    // Removed _loadUserTrips() call since it's handled by TripDataService streams
     _loadPendingInvitations();
     _loadPreferencesFromHive();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -62,38 +59,35 @@ class _ProfilePageState extends State<ProfilePage> {
               .collection('users')
               .doc(user!.uid)
               .get();
-      if (!mounted) return; // Check if widget is still mounted
+      if (!mounted) return;
 
       if (doc.exists) {
         final data = doc.data()!;
         setState(() {
           _distanceUnit = data['distanceUnit'] ?? 'km';
           _timeFormat = data['timeFormat'] ?? '24h';
-          // Removed loading _dateFormat
           _photoUrl = data['photoURL'] as String?;
           _error = null;
         });
       }
     } catch (e) {
-      if (!mounted) return; // Check if widget is still mounted
+      if (!mounted) return;
       setState(() {
         _error = 'Error loading profile: $e';
       });
     }
   }
 
-  // Removed _loadUserTrips method since it's now handled by stream
-
   Future<void> _loadPendingInvitations() async {
     if (user == null) return;
     try {
       final invitations = await _invitationService.getPendingInvitations();
-      if (!mounted) return; // Check if widget is still mounted
+      if (!mounted) return;
       setState(() {
         _pendingInvitations = invitations;
       });
     } catch (e) {
-      if (!mounted) return; // Check if widget is still mounted
+      if (!mounted) return;
       print('Error loading invitations: $e');
     }
   }
@@ -102,7 +96,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final box = Hive.box('userBox');
     final distanceUnit = box.get('distanceUnit');
 
-    if (!mounted) return; // Check if widget is still mounted
+    if (!mounted) return;
 
     if (distanceUnit != null &&
         (distanceUnit == 'km' || distanceUnit == 'mi')) {
@@ -116,7 +110,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _timeFormat = timeFormat;
       });
     }
-    // Removed loading dateFormat from Hive
     final selectedTripId = box.get('selectedTripId') as String?;
     if (selectedTripId != null) {
       setState(() {
@@ -125,7 +118,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // New method to save a specific preference
   Future<void> _savePreference(String key, String value) async {
     if (user == null) return;
 
@@ -135,18 +127,15 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     try {
-      // Update in Firestore
       await FirebaseFirestore.instance.collection('users').doc(user!.uid).set({
         key: value,
       }, SetOptions(merge: true));
 
-      // Save in Hive
       final box = Hive.box('userBox');
       await box.put(key, value);
 
       if (!mounted) return;
 
-      // Show subtle confirmation
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('$key updated'),
@@ -176,12 +165,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (!mounted) return;
 
-    // Create a temporary file for immediate display
     final tempFile = File(pickedFile.path);
 
-    // Show the image immediately to improve perceived performance
     setState(() {
-      _photoUrl = pickedFile.path; // Temporary local path
+      _photoUrl = pickedFile.path;
       _loading = true;
     });
 
@@ -197,10 +184,9 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
 
       setState(() {
-        _photoUrl = downloadUrl; // Update with actual download URL
+        _photoUrl = downloadUrl;
       });
 
-      // Update the UserDataService with the new photo URL
       Provider.of<UserDataService>(
         context,
         listen: false,
@@ -216,7 +202,6 @@ class _ProfilePageState extends State<ProfilePage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error uploading image: $e')));
 
-      // Reset to previous photo if upload failed
       setState(() {
         _photoUrl = user?.photoURL;
       });
@@ -230,13 +215,10 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _navigateToCreateTrip() async {
-    // Use rootContext if available, otherwise fallback to local context
     final modalContext = widget.rootContext ?? context;
-    // Updated to call TripCreationPage.show
     final result = await TripCreationPage.show(context: modalContext);
 
     if (result == true && mounted) {
-      // No need to call loadUserTrips since we're using streams now
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Trip created successfully!')),
       );
@@ -250,7 +232,6 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       if (invitation == null || !mounted) return;
 
-      // Get the trip info
       final tripDoc =
           await FirebaseFirestore.instance
               .collection('trips')
@@ -266,7 +247,6 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       );
 
-      // Refresh invitations after responding to an invitation
       if (result != null) {
         _loadPendingInvitations();
       }
@@ -279,13 +259,11 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Confirm and process leaving a trip
   Future<void> _confirmLeaveTrip(Trip trip) async {
     final uid = user!.uid;
     final tripRef = FirebaseFirestore.instance.collection('trips').doc(trip.id);
     final participants = trip.participants;
     if (trip.ownerId == uid) {
-      // Owner leaving: assign new owner or delete if none
       final remaining = participants.where((p) => p.uid != uid).toList();
       if (remaining.isNotEmpty) {
         final newOwner = remaining[Random().nextInt(remaining.length)];
@@ -295,20 +273,16 @@ class _ProfilePageState extends State<ProfilePage> {
           'updatedAt': FieldValue.serverTimestamp(),
         });
       } else {
-        // Get the trip data service to delete trip days
         final tripDataService = Provider.of<TripDataService>(
           context,
           listen: false,
         );
 
-        // Delete all trip days before deleting the trip
         await tripDataService.deleteTripDays(trip.id);
 
-        // Then delete the trip document
         await tripRef.delete();
       }
     } else {
-      // Participant leaving
       final remaining = participants.where((p) => p.uid != uid).toList();
       await tripRef.update({
         'participants': remaining.map((p) => p.toMap()).toList(),
@@ -316,9 +290,8 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     }
 
-    if (!mounted) return; // Check if widget is still mounted
+    if (!mounted) return;
 
-    // Refresh trips list - no need to call loadUserTrips as we have streams
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Left trip "${trip.name}"')));
@@ -346,13 +319,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 backgroundColor: Colors.white,
                 centerTitle: true,
               ),
-          // Remove the empty SliverToBoxAdapter that's adding extra space
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // Profile Section - No Card
-                // Adjusted vertical padding to reduce space at the top
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
                   child: Column(
@@ -386,20 +356,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                 child: IconButton(
                                   onPressed:
                                       _loading ? null : _pickProfileImage,
-                                  // Changed icon to edit
                                   icon: const Icon(Icons.edit, size: 20),
                                   style: IconButton.styleFrom(
-                                    // Semi-transparent background
                                     backgroundColor: Colors.black.withOpacity(
                                       0.5,
                                     ),
                                     foregroundColor: Colors.white,
-                                    // Make it smaller
                                     padding: const EdgeInsets.all(4),
-                                    minimumSize: const Size(
-                                      28,
-                                      28,
-                                    ), // Adjust size if needed
+                                    minimumSize: const Size(28, 28),
                                     shape: const CircleBorder(),
                                   ),
                                 ),
@@ -436,7 +400,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
 
-                // Error Display - No Card, styled Text
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -453,7 +416,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
 
-                // Trip Invitations - Only show if there are pending invitations
                 if (_pendingInvitations.isNotEmpty) ...[
                   const Divider(height: 32),
                   Padding(
@@ -475,15 +437,13 @@ class _ProfilePageState extends State<ProfilePage> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _pendingInvitations.length,
-                    padding:
-                        EdgeInsets.zero, // Remove all padding around the list
+                    padding: EdgeInsets.zero,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final invitation = _pendingInvitations[index];
 
                       return ListTile(
-                        contentPadding:
-                            EdgeInsets.zero, // Remove default padding
+                        contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.card_travel),
                         title: Text(invitation.tripName),
                         subtitle: Text('From: @${invitation.inviterName}'),
@@ -494,12 +454,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ],
 
-                // Preferences Section - Header + Cupertino Controls
                 const Divider(height: 32),
                 const Padding(
-                  padding: EdgeInsets.only(
-                    bottom: 16.0,
-                  ), // Increased bottom padding
+                  padding: EdgeInsets.only(bottom: 16.0),
                   child: Text(
                     'Preferences',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -522,7 +479,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             }
                           },
                 ),
-                const SizedBox(height: 16), // Spacing between controls
+                const SizedBox(height: 16),
                 _buildPreferenceControl<String>(
                   label: 'Time',
                   value: _timeFormat,
@@ -540,9 +497,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             }
                           },
                 ),
-                // Removed Date Format preference control
 
-                // Trips Section - Header + List
                 const Divider(height: 32),
 
                 Row(
@@ -570,35 +525,28 @@ class _ProfilePageState extends State<ProfilePage> {
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  // Set padding to zero, especially top, to remove space above the first item
                   padding: EdgeInsets.only(top: 16),
                   itemCount: tripDataService.userTrips.length,
                   separatorBuilder:
-                      (_, __) => const Divider(
-                        height: 1,
-                        color: Colors.transparent,
-                      ), // Keep transparent divider for spacing consistency from TripTile margin
+                      (_, __) =>
+                          const Divider(height: 1, color: Colors.transparent),
                   itemBuilder: (context, index) {
                     final trip = tripDataService.userTrips[index];
                     final isSelected =
                         trip.id == tripDataService.selectedTripId;
-                    // Use a standard ListTile or keep TripTile if it's sufficiently styled
                     return TripTile(
                       trip: trip,
                       isSelected: isSelected,
-                      // Removed dateFormat parameter
-                      borderColor: trip.color, // Pass trip color here
+                      borderColor: trip.color,
                       onTripSelected: (selectedTrip) async {
                         final newId = isSelected ? null : selectedTrip.id;
                         await tripDataService.setSelectedTrip(newId);
-                        // No need to manually load trip days since we have streams
                       },
                       onTripLeave: _confirmLeaveTrip,
                     );
                   },
                 ),
 
-                // Account Section - Header + ListTiles
                 const Divider(height: 32),
                 const Padding(
                   padding: EdgeInsets.only(bottom: 8.0),
@@ -612,8 +560,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   leading: const Icon(Icons.logout),
                   title: const Text('Sign Out'),
                   onTap: () {
-                    // Replace direct Firebase Auth call with AuthService call
-                    // Import AuthService at the top of the file: import 'package:trip_planner/auth/auth_service.dart';
                     final authService = AuthService();
                     authService.signOut();
                   },
@@ -633,7 +579,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   onTap: () => _confirmDeleteAccount(context),
                 ),
 
-                const SizedBox(height: 32), // Bottom padding
+                const SizedBox(height: 32),
               ]),
             ),
           ),
@@ -642,7 +588,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Method to confirm and process account deletion - Updated to iOS style
   Future<void> _confirmDeleteAccount(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -678,26 +623,21 @@ class _ProfilePageState extends State<ProfilePage> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
-      // Delete user data from Firestore
       final batch = FirebaseFirestore.instance.batch();
 
-      // Delete user document
       batch.delete(
         FirebaseFirestore.instance.collection('users').doc(user.uid),
       );
 
-      // Find and handle user's trips
       for (final trip in _userTrips) {
         final tripRef = FirebaseFirestore.instance
             .collection('trips')
             .doc(trip.id);
         if (trip.ownerId == user.uid) {
-          // If user is owner and there are other participants, transfer ownership
           final otherParticipants =
               trip.participants.where((p) => p.uid != user.uid).toList();
 
           if (otherParticipants.isNotEmpty) {
-            // Transfer ownership to first participant
             final newOwner = otherParticipants.first;
             batch.update(tripRef, {
               'ownerId': newOwner.uid,
@@ -705,10 +645,8 @@ class _ProfilePageState extends State<ProfilePage> {
               'updatedAt': FieldValue.serverTimestamp(),
             });
           } else {
-            // Delete trip if no other participants
             batch.delete(tripRef);
 
-            // Delete all trip days for this trip
             final tripDaysSnapshot =
                 await FirebaseFirestore.instance
                     .collection('tripDays')
@@ -720,7 +658,6 @@ class _ProfilePageState extends State<ProfilePage> {
             }
           }
         } else {
-          // If user is just a participant, remove from participants
           final updatedParticipants =
               trip.participants
                   .where((p) => p.uid != user.uid)
@@ -734,29 +671,22 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       }
 
-      // Commit all Firestore changes
       await batch.commit();
 
-      // Delete profile picture from storage if exists
       if (user.photoURL != null && user.photoURL!.contains('firebase')) {
         try {
           await FirebaseStorage.instance
               .ref('profilePictures/${user.uid}')
               .delete();
         } catch (e) {
-          // Ignore errors if photo doesn't exist
           print('Error deleting profile photo: $e');
         }
       }
 
-      // Delete the Firebase Auth user
       await user.delete();
 
-      // Clear local storage
       final box = Hive.box('userBox');
       await box.clear();
-
-      // User will be automatically signed out and redirected to auth page
     } catch (e) {
       if (!mounted) return;
 
@@ -764,7 +694,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _loading = false;
       });
 
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error deleting account: $e'),
@@ -774,41 +703,29 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Helper method to determine the profile image
   ImageProvider? _getProfileImage(UserDataService userDataService) {
-    // Check if we have a local file path (during image upload)
     if (_photoUrl != null && _photoUrl!.isNotEmpty) {
       if (_photoUrl!.startsWith('/')) {
-        // Local file path
         return FileImage(File(_photoUrl!));
       } else {
-        // Network URL
         return NetworkImage(_photoUrl!);
       }
-    }
-    // Try to use the userDataService photoUrl
-    else if (userDataService.photoUrl != null &&
+    } else if (userDataService.photoUrl != null &&
         userDataService.photoUrl!.isNotEmpty) {
       return NetworkImage(userDataService.photoUrl!);
-    }
-    // Finally check the Firebase Auth user's photoURL
-    else if (user?.photoURL != null && user!.photoURL!.isNotEmpty) {
+    } else if (user?.photoURL != null && user!.photoURL!.isNotEmpty) {
       return NetworkImage(user!.photoURL!);
     }
-    // Return null if no image is available
     return null;
   }
 
-  // Helper method to determine if the default icon should be shown
   bool _shouldShowDefaultIcon(UserDataService userDataService) {
-    // Use the state's user variable
     return (userDataService.photoUrl == null ||
             userDataService.photoUrl!.isEmpty) &&
         (_photoUrl == null || _photoUrl!.isEmpty) &&
         (user?.photoURL == null || user!.photoURL!.isEmpty);
   }
 
-  // Helper widget for preference controls
   Widget _buildPreferenceControl<T extends Object>({
     required String label,
     required T value,

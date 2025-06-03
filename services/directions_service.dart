@@ -1,13 +1,13 @@
-import 'dart:async'; // Add
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // Import LatLng
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:trip_planner/models/location.dart';
 import 'package:trip_planner/services/directions_cache_service.dart';
 import 'package:trip_planner/models/transit_details.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart'; // Add missing Provider import
+import 'package:provider/provider.dart';
 
 class DirectionsResult {
   final String duration;
@@ -15,7 +15,7 @@ class DirectionsResult {
   final String durationValue; // seconds
   final String distanceValue; // meters
   final List<Step> steps;
-  final String polylineEncoded; // Add encoded polyline
+  final String polylineEncoded;
 
   DirectionsResult({
     required this.duration,
@@ -23,13 +23,12 @@ class DirectionsResult {
     required this.durationValue,
     required this.distanceValue,
     this.steps = const [],
-    required this.polylineEncoded, // Make required
+    required this.polylineEncoded,
   });
 
   factory DirectionsResult.fromJson(Map<String, dynamic> json) {
     final routes = json['routes'] as List?;
     if (routes == null || routes.isEmpty) {
-      // ...existing error handling...
       debugPrint(
         'DirectionsAPI: No routes found in response: ${json['status']}',
       );
@@ -39,7 +38,7 @@ class DirectionsResult {
       throw Exception('No routes found: ${json['status']}');
     }
 
-    final route = routes[0]; // Get the first route
+    final route = routes[0];
     final legs = route['legs'] as List?;
     if (legs == null || legs.isEmpty) {
       throw Exception('No route legs found');
@@ -47,20 +46,17 @@ class DirectionsResult {
 
     final leg = legs[0];
 
-    // Parse steps if available
     List<Step> steps = [];
     if (leg['steps'] != null) {
       steps =
           (leg['steps'] as List)
-              .map((stepJson) => Step.fromJson(stepJson)) // Use Step.fromJson
+              .map((stepJson) => Step.fromJson(stepJson))
               .toList();
     }
 
-    // Get the overview polyline
     final overviewPolyline = route['overview_polyline']?['points'] as String?;
     if (overviewPolyline == null || overviewPolyline.isEmpty) {
       debugPrint('DirectionsAPI: Overview polyline not found or empty.');
-      // Throw an exception if polyline is missing from API response
       throw Exception('Overview polyline not found in API response');
     }
 
@@ -70,38 +66,27 @@ class DirectionsResult {
       durationValue: (leg['duration']['value'] ?? 0).toString(),
       distanceValue: (leg['distance']['value'] ?? 0).toString(),
       steps: steps,
-      polylineEncoded: overviewPolyline, // Pass the parsed polyline
+      polylineEncoded: overviewPolyline,
     );
   }
 
-  // Add toMap method for Firestore serialization
   Map<String, dynamic> toMap() {
     return {
       'duration': duration,
       'distance': distance,
       'durationValue': durationValue,
       'distanceValue': distanceValue,
-      // Omit steps for simplicity in cache, reconstruct if needed elsewhere
-      'polylineEncoded': polylineEncoded, // *** Ensure polyline is included ***
-      // Timestamp is added by CacheService before saving
+      'polylineEncoded': polylineEncoded,
     };
   }
 
-  // Add fromMap factory for Firestore deserialization
   factory DirectionsResult.fromMap(Map<String, dynamic> map) {
-    // Reconstruct steps from cache if they were stored and are needed
-    // List<Step> steps = (map['steps'] as List?)
-    //     ?.map((stepMap) => Step.fromMap(Map<String, dynamic>.from(stepMap)))
-    //     .toList() ?? [];
-
     return DirectionsResult(
       duration: map['duration'] ?? '',
       distance: map['distance'] ?? '',
       durationValue: map['durationValue'] ?? '0',
       distanceValue: map['distanceValue'] ?? '0',
-      // steps: steps, // Assign reconstructed steps if needed
-      polylineEncoded:
-          map['polylineEncoded'] ?? '', // *** Ensure polyline is retrieved ***
+      polylineEncoded: map['polylineEncoded'] ?? '',
     );
   }
 }
@@ -127,7 +112,6 @@ class Step {
     this.transitDetails,
   });
 
-  // Factory to create Step from JSON (API response)
   factory Step.fromJson(Map<String, dynamic> json) {
     final startLoc = json['start_location'];
     final endLoc = json['end_location'];
@@ -158,7 +142,6 @@ class Step {
     );
   }
 
-  // Convert to map for Firestore storage
   Map<String, dynamic> toMap() {
     return {
       'htmlInstructions': htmlInstructions,
@@ -166,12 +149,10 @@ class Step {
       'duration': duration,
       'travelMode': travelMode,
       'startLocation': {
-        // Store LatLng as map
         'latitude': startLocation.latitude,
         'longitude': startLocation.longitude,
       },
       'endLocation': {
-        // Store LatLng as map
         'latitude': endLocation.latitude,
         'longitude': endLocation.longitude,
       },
@@ -180,7 +161,6 @@ class Step {
     };
   }
 
-  // Create from Firestore map
   factory Step.fromMap(Map<String, dynamic> map) {
     final startLocMap = map['startLocation'] as Map<String, dynamic>?;
     final endLocMap = map['endLocation'] as Map<String, dynamic>?;
@@ -190,12 +170,10 @@ class Step {
       duration: map['duration'] ?? '',
       travelMode: map['travelMode'] ?? 'UNKNOWN',
       startLocation: LatLng(
-        // Create LatLng from map
         startLocMap?['latitude'] ?? 0.0,
         startLocMap?['longitude'] ?? 0.0,
       ),
       endLocation: LatLng(
-        // Create LatLng from map
         endLocMap?['latitude'] ?? 0.0,
         endLocMap?['longitude'] ?? 0.0,
       ),
@@ -215,10 +193,8 @@ class DirectionsService {
   final http.Client _httpClient;
   final DirectionsCacheService _cacheService = DirectionsCacheService();
 
-  // Flag to enable/disable caching (enabled by default)
   final bool _useCache;
 
-  // Flag to control verbose debug logs - setting to true temporarily
   final bool _verboseLogging = true;
 
   DirectionsService({
@@ -236,7 +212,6 @@ class DirectionsService {
     String? tripId,
     DateTime? arrivalTime,
   }) async {
-    // Try to get from cache first if caching is enabled
     if (_useCache) {
       try {
         final cachedResult = await _cacheService.getDirections(
@@ -257,13 +232,11 @@ class DirectionsService {
       }
     }
 
-    // If not in cache or cache disabled, proceed with API call
     final originParam =
         '${origin.coordinates.latitude},${origin.coordinates.longitude}';
     final destParam =
         '${destination.coordinates.latitude},${destination.coordinates.longitude}';
 
-    // Add current timestamp for time parameters
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
     final params = {
@@ -273,12 +246,8 @@ class DirectionsService {
       'key': _apiKey,
     };
 
-    // Add transit-specific parameters when using transit mode
     if (travelMode == 'transit') {
-      // If arrivalTime is specified, use it to calculate routes that arrive by that time
-      // Otherwise use current time as departure time
       if (arrivalTime != null) {
-        // Convert DateTime to UNIX timestamp (seconds)
         final arrivalTimestamp = arrivalTime.millisecondsSinceEpoch ~/ 1000;
         params['arrival_time'] = arrivalTimestamp.toString();
 
@@ -310,17 +279,6 @@ class DirectionsService {
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
 
-        /*  // *** ADD DETAILED LOGGING HERE ***
-        if (_verboseLogging) {
-          debugPrint('DirectionsAPI: Raw JSON Response:');
-          // Use jsonEncode for pretty printing
-          JsonEncoder encoder = const JsonEncoder.withIndent('  ');
-          String prettyprint = encoder.convert(jsonResponse);
-          debugPrint(prettyprint);
-        } */
-        // *** END LOGGING ***
-
-        // Check for API-level errors
         final status = jsonResponse['status'];
         if (status != 'OK') {
           if (_verboseLogging) {
@@ -330,9 +288,7 @@ class DirectionsService {
             );
           }
 
-          // Special handling for ZERO_RESULTS status
           if (status == 'ZERO_RESULTS') {
-            // Check available travel modes
             final availableModes =
                 jsonResponse['available_travel_modes'] as List?;
             final String modesMessage =
@@ -354,17 +310,14 @@ class DirectionsService {
           throw Exception('Directions API error: $status');
         }
 
-        // *** Potential issue point: Parsing ***
         final result = DirectionsResult.fromJson(jsonResponse);
 
-        // Log the parsed polyline
         if (_verboseLogging) {
           debugPrint(
             'DirectionsAPI: Parsed polylineEncoded length: ${result.polylineEncoded.length}',
           );
         }
 
-        // Store successful result in cache
         if (_useCache) {
           await _cacheService.storeDirections(
             origin,

@@ -16,7 +16,6 @@ class TripHeaderBar extends StatefulWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize {
-    // Adjust height based on title length
     double height = kToolbarHeight;
     if (trip.name.length > 15) {
       height = kToolbarHeight - 4.0;
@@ -29,9 +28,7 @@ class TripHeaderBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _TripHeaderBarState extends State<TripHeaderBar> {
-  // Cache the participant avatars widget
   Widget? _cachedParticipantAvatars;
-  // Store the participant list used to build the cache
   List<TripParticipant>? _cachedParticipantsList;
 
   @override
@@ -44,35 +41,25 @@ class _TripHeaderBarState extends State<TripHeaderBar> {
   void didUpdateWidget(TripHeaderBar oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Rebuild avatar cache if participants change
     _updateParticipantAvatarsCacheIfNeeded(oldWidget.trip.participants);
   }
 
-  // Method to build or rebuild the avatar cache if participants changed
   void _updateParticipantAvatarsCacheIfNeeded([
     List<TripParticipant>? oldParticipants,
   ]) {
-    // Use identical check for performance if list instance hasn't changed
     if (_cachedParticipantAvatars == null ||
         !identical(widget.trip.participants, _cachedParticipantsList)) {
-      // If not identical, do a deep comparison (optional, but safer if list content might change without instance changing)
-      // For simplicity, we'll rebuild if the instance is different or null.
-      // A more robust check might involve comparing participant UIDs or list length.
       setState(() {
         _cachedParticipantsList = widget.trip.participants;
         _cachedParticipantAvatars = _buildParticipantAvatars();
-        // Add debug print to confirm cache rebuild
         debugPrint("Rebuilding participant avatars cache.");
       });
     }
   }
 
-  // Builds the actual OverlappingAvatars widget
   Widget _buildParticipantAvatars() {
-    // Add debug print to see when this expensive build happens
     debugPrint("Executing _buildParticipantAvatars()");
 
-    // Scale avatar size based on trip name length for better proportions
     double avatarSize = 38.0;
     if (widget.trip.name.length > 15) {
       avatarSize = 36.0;
@@ -87,12 +74,11 @@ class _TripHeaderBarState extends State<TripHeaderBar> {
       avatarSize: avatarSize,
       overlap: 12.0,
       backgroundColor: Colors.grey.shade400,
-      clickable: true, // Make it appear clickable
+      clickable: true,
       onTap: () => _showParticipantsModal(context),
     );
   }
 
-  // Method to show the participants management modal
   void _showParticipantsModal(BuildContext context) async {
     final result = await showParticipantsListModal(
       context: context,
@@ -100,7 +86,6 @@ class _TripHeaderBarState extends State<TripHeaderBar> {
     );
 
     if (result == true) {
-      // Participant changes were saved, update the cache
       setState(() {
         _cachedParticipantsList = null;
         _cachedParticipantAvatars = null;
@@ -114,10 +99,8 @@ class _TripHeaderBarState extends State<TripHeaderBar> {
     final theme = Theme.of(context);
     final tripColor = widget.trip.color ?? theme.colorScheme.primary;
 
-    // Ensure cache is built if it's somehow null
     _cachedParticipantAvatars ??= _buildParticipantAvatars();
 
-    // Calculate font size based on text length
     double fontSize = 28.0;
     double topPadding = 4.0;
     double toolbarHeight = kToolbarHeight;
@@ -136,17 +119,11 @@ class _TripHeaderBarState extends State<TripHeaderBar> {
     return AppBar(
       toolbarHeight: toolbarHeight,
       leading: Padding(
-        padding: EdgeInsets.only(
-          left: 16.0,
-          top: topPadding,
-        ), // Adjust top padding based on size
-        // Use the cached widget here with onTap handler
+        padding: EdgeInsets.only(left: 16.0, top: topPadding),
         child: _cachedParticipantAvatars!,
       ),
       title: Padding(
-        padding: EdgeInsets.only(
-          top: topPadding - 2.0,
-        ), // Adjust vertical alignment to match leading
+        padding: EdgeInsets.only(top: topPadding - 2.0),
         child: HighlightedText(
           text: widget.trip.name,
           highlightColor: tripColor,

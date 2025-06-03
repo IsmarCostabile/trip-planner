@@ -3,19 +3,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class UserDataService extends ChangeNotifier {
-  // Singleton pattern
   static final UserDataService _instance = UserDataService._internal();
   factory UserDataService() => _instance;
   UserDataService._internal();
 
-  // User data cache
   Map<String, dynamic>? _userData;
   String? _photoUrl;
   String? _username;
   Map<String, dynamic> _preferences = {};
   bool _isLoading = false;
 
-  // Getters for user data
   Map<String, dynamic>? get userData => _userData;
   String? get photoUrl => _photoUrl;
   String? get username => _username;
@@ -23,12 +20,10 @@ class UserDataService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoaded => _userData != null;
 
-  // Load user data from Firestore
   Future<void> loadUserData({bool forceRefresh = false}) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    // Return cached data if available and not forcing refresh
     if (_userData != null && !forceRefresh) {
       return;
     }
@@ -58,7 +53,6 @@ class UserDataService extends ChangeNotifier {
     }
   }
 
-  // Update user data and cache
   Future<void> updateUserData(Map<String, dynamic> data) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -69,7 +63,6 @@ class UserDataService extends ChangeNotifier {
           .doc(user.uid)
           .update(data);
 
-      // Update cache
       _userData = {...?_userData, ...data};
       if (data.containsKey('photoUrl')) _photoUrl = data['photoUrl'];
       if (data.containsKey('username')) _username = data['username'];
@@ -81,7 +74,6 @@ class UserDataService extends ChangeNotifier {
     }
   }
 
-  // Update photo URL specifically
   Future<void> updatePhotoUrl(String photoUrl) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -91,7 +83,6 @@ class UserDataService extends ChangeNotifier {
         {'photoURL': photoUrl},
       );
 
-      // Update cache
       _userData = {...?_userData, 'photoURL': photoUrl};
       _photoUrl = photoUrl;
 
@@ -101,7 +92,6 @@ class UserDataService extends ChangeNotifier {
     }
   }
 
-  // Clear cache on logout
   void clearCache() {
     _userData = null;
     _photoUrl = null;

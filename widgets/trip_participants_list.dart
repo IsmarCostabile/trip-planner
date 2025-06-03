@@ -60,7 +60,6 @@ class _TripParticipantsListState extends State<TripParticipantsList> {
   }
 
   void _removeParticipant(int index) {
-    // Don't allow removing the current user (trip owner)
     if (_participants[index].uid == widget.currentUserId) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

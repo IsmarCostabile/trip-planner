@@ -5,8 +5,6 @@ import 'package:trip_planner/models/visit.dart';
 import 'package:provider/provider.dart';
 import 'package:trip_planner/services/trip_data_service.dart';
 
-/// A lightweight map page specifically designed for quick views when tapping
-/// on maps in visit tiles. Provides a smooth animation and a dedicated close button.
 class QuickLookMapPage extends StatefulWidget {
   final Visit? visit;
   final Location? location;
@@ -33,7 +31,6 @@ class QuickLookMapPage extends StatefulWidget {
   @override
   State<QuickLookMapPage> createState() => _QuickLookMapPageState();
 
-  /// Helper method to easily navigate to this page with a smooth animation
   static Future<void> show({
     required BuildContext context,
     Visit? visit,
@@ -89,7 +86,6 @@ class _QuickLookMapPageState extends State<QuickLookMapPage>
     } else if (widget.latitude != null && widget.longitude != null) {
       return LatLng(widget.latitude!, widget.longitude!);
     }
-    // Default location (San Francisco) if somehow nothing is provided
     return const LatLng(37.7749, -122.4194);
   }
 
@@ -108,7 +104,6 @@ class _QuickLookMapPageState extends State<QuickLookMapPage>
     final Set<Marker> markers = {};
     final latLng = _mapCoordinates;
 
-    // Add the main focused marker
     markers.add(
       Marker(
         markerId: const MarkerId('focus'),
@@ -118,7 +113,6 @@ class _QuickLookMapPageState extends State<QuickLookMapPage>
       ),
     );
 
-    // Add other visit markers from the same day
     if (widget.visit != null) {
       final tripDataService = Provider.of<TripDataService>(
         context,
@@ -129,7 +123,6 @@ class _QuickLookMapPageState extends State<QuickLookMapPage>
       );
 
       for (final visit in visits) {
-        // Skip the focused visit as we already added it
         if (visit.id == widget.visit!.id) continue;
 
         if (visit.location?.coordinates != null) {
@@ -184,7 +177,6 @@ class _QuickLookMapPageState extends State<QuickLookMapPage>
       onMapCreated: (controller) {
         _mapController = controller;
 
-        // Animate camera to position with smooth motion
         if (!_mapCreated) {
           _mapCreated = true;
           Future.delayed(const Duration(milliseconds: 300), () {

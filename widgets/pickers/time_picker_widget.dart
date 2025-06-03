@@ -38,11 +38,9 @@ class _TimePickerWidgetState extends State<TimePickerWidget> {
         initialTimerDuration: _currentTimerDuration,
         minuteInterval: widget.minuteInterval,
         onTimerDurationChanged: (Duration newDuration) {
-          // Update internal state for the picker itself
           setState(() {
             _currentTimerDuration = newDuration;
           });
-          // Notify the parent widget
           widget.onTimeChanged(
             TimeOfDay(
               hour: newDuration.inHours % 24,
