@@ -37,7 +37,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBTBjBu2hnNnAM9bW8nIePe7RjrvRhtGDg',
+    apiKey: 'API_KEY_HERE',
     appId: '1:136541823767:web:e67bc0106a88b6acc54d52',
     messagingSenderId: '136541823767',
     projectId: 'trip-planner-3dbeb',
@@ -47,7 +47,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDySHkBIdEmX8TAp4VvjS9A2rhoUF2H_qI',
+    apiKey: 'API_KEY_HERE',
     appId: '1:136541823767:android:0183d1d164666047c54d52',
     messagingSenderId: '136541823767',
     projectId: 'trip-planner-3dbeb',
@@ -55,7 +55,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAWfP4sgd4Nq-eU5SdwS_7LxMuC-Ph9R-4',
+    apiKey: 'API_KEY_HERE',
     appId: '1:136541823767:ios:ab84f73e1f73e756c54d52',
     messagingSenderId: '136541823767',
     projectId: 'trip-planner-3dbeb',
