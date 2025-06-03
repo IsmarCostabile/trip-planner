@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_webservice/places.dart';
 
 class PlacesService {
-  static const _apiKey = 'AIzaSyCG5UmgCt5rnQI1fKY5Qr29nimV04V-mFo';
+  static const _apiKey = 'GOOGLE_MAPS_API_KEY_HERE';
   static String get apiKey => _apiKey;
   final places = GoogleMapsPlaces(apiKey: _apiKey);
 

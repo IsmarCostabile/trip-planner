@@ -23,6 +23,7 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Hive.initFlutter();
   await Hive.openBox('userBox');
+  await Firebase.initializeApp();
 
   // Create trip data service instance first
   final tripDataService = TripDataService();
